@@ -77,6 +77,15 @@ function isValidJSON(text) {
     return false;
   }
 }
+const formatPrice = (row, column, cellValue, index) => {
+  // 检查值是否为数字，如果不是数字，则直接返回原值
+  if (isNaN(cellValue)) {
+    return cellValue;
+  }
+
+  // 将数值转换为固定的小数点表示法，保留两位小数
+  return Number(cellValue).toFixed(2);
+};
 const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
   debounceTimer.value = setTimeout(run, 1000); // 重新设置计时器
@@ -161,10 +170,14 @@ const run = async () => {
       <el-table-column prop="name" label="名称" />
       <el-table-column prop="url" label="url" />
       <el-table-column prop="method" label="请求方法" />
-      <el-table-column prop="rps" label="rps" />
+      <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
       <el-table-column prop="total_requests" label="总请求数" />
       <el-table-column prop="err_count" label="错误数量" />
-      <el-table-column prop="error_rate" label="错误率" />
+      <el-table-column
+        prop="error_rate"
+        label="错误率"
+        :formatter="formatPrice"
+      />
       <el-table-column prop="min_response_time" label="最小响应时间(ms)" />
       <el-table-column prop="max_response_time" label="最大响应时间(ms)" />
       <el-table-column prop="median_response_time" label="中位响应时间(ms)" />
@@ -173,8 +186,13 @@ const run = async () => {
       <el-table-column
         prop="throughput_per_second_kb"
         label="每秒响应数据（kb）"
+        :formatter="formatPrice"
       />
-      <el-table-column prop="total_data_kb" label="总响应数据量（kb）" />
+      <el-table-column
+        prop="total_data_kb"
+        label="总响应数据量（kb）"
+        :formatter="formatPrice"
+      />
     </el-table>
     <footer>
       powered by
