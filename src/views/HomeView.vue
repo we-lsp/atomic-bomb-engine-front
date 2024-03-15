@@ -17,8 +17,8 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-// const ws = new WebSocket(`ws://${baseURL}/ws`);
-const ws = new WebSocket(`ws://localhost:8000/ws`);
+const ws = new WebSocket(`ws://${baseURL}/ws`);
+// const ws = new WebSocket(`ws://localhost:8000/ws`);
 let heartbeatTimer;
 onMounted(() => {
   let heartbeatInterval = 5000;
@@ -89,8 +89,8 @@ onUnmounted(() => {
 const run = async () => {
   if (buttonShow.value) {
     buttonShow.value = false;
-    // const response = await axios.get(`http://${baseURL}/run`);
-    const response = await axios.get(`http://localhost:8000/run`);
+    const response = await axios.get(`http://${baseURL}/run`);
+    // const response = await axios.get(`http://localhost:8000/run`);
     console.log("response", response.data);
     message.value = response.data;
     httpData.value = response.data.http_errors;
