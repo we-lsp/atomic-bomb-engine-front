@@ -6,6 +6,7 @@ import HelloWorld from "../components/HelloWorld.vue";
 
 import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
+import {ElNotification} from "element-plus";
 const debounceTimer = ref(null);
 const message = ref("");
 const httpIsError = ref(false);
@@ -86,6 +87,24 @@ const formatPrice = (row, column, cellValue, index) => {
   // 将数值转换为固定的小数点表示法，保留两位小数
   return Number(cellValue).toFixed(2);
 };
+const formatPriceWithPercentage = (row, column, cellValue, index) => {
+  if (cellValue === 0.0){
+    return "-"
+  }
+  const formattedValue = formatPrice(row, column, cellValue, index);
+  return `${formattedValue}%`;
+};
+
+const getColor = (value) =>{
+  if (value < 10) {
+    return 'green';
+  } else if (value < 50) {
+    return 'orange';
+  } else {
+    return 'red';
+  }
+};
+
 const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
   debounceTimer.value = setTimeout(run, 1000); // 重新设置计时器
@@ -105,6 +124,7 @@ const run = async () => {
     httpData.value = response.data.http_errors;
     assertData.value = response.data.assert_errors;
     api_resultsData.value = response.data.api_results;
+    ElNotification.success({title:"压测已完成"})
   }
 };
 </script>
@@ -173,11 +193,13 @@ const run = async () => {
       <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
       <el-table-column prop="total_requests" label="总请求数" />
       <el-table-column prop="err_count" label="错误数量" />
-      <el-table-column
-        prop="error_rate"
-        label="错误率"
-        :formatter="formatPrice"
-      />
+      <el-table-column prop="error_rate" label="错误率">
+        <template v-slot:default="scope">
+    <span :style="{ color: getColor(scope.row.error_rate) }">
+      {{ formatPriceWithPercentage(scope.row, 'error_rate', scope.row.error_rate, scope.$index) }}
+    </span>
+        </template>
+      </el-table-column>
       <el-table-column prop="min_response_time" label="最小响应时间(ms)" />
       <el-table-column prop="max_response_time" label="最大响应时间(ms)" />
       <el-table-column prop="median_response_time" label="中位响应时间(ms)" />
