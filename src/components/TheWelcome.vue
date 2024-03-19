@@ -2,13 +2,18 @@
 import { ref, onMounted, watch } from "vue";
 import * as echarts from "echarts";
 import WelcomeItem from "./WelcomeItem.vue";
+import { useTransition } from '@vueuse/core'
 
 const props = defineProps({
   receivedMessage: Object,
 });
-const error_rate = ref("0%");
-const rps = ref("0.00");
+const error_rate = ref(0);
+const outputErrorRate = useTransition(error_rate, {duration: 1000});
+const rps = ref(0);
+const outputRPS = useTransition(rps, {duration: 1000});
 const total_requests = ref(0);
+const outputTotalRequests = useTransition(total_requests, {duration: 1000});
+
 const chartRPS = ref(null);
 const chartResponseTime = ref(null);
 const rpsData = ref([]);
@@ -161,9 +166,9 @@ watch(
 
       // if (rpsData.value.length > 20) rpsData.value.shift();
       updateRPSChart();
-      error_rate.value = newVal.error_rate.toFixed(2) + "%";
-      rps.value = newVal.rps.toFixed(2) ;
-      total_requests.value = newVal.total_requests.toFixed(0);
+      error_rate.value = newVal.error_rate;
+      rps.value = newVal.rps;
+      total_requests.value = newVal.total_requests;
       medianData.value.push({
         timestamp: newTimestamp,
         value: newVal.median_response_time,
@@ -197,13 +202,17 @@ watch(
       "
     >
       <div class="flex-item">
-        <el-statistic title="RPS" :value="rps" />
+        <el-statistic title="RPS" :precision="2" :value="outputRPS" />
       </div>
       <div class="flex-row">
-        <el-statistic title="错误率" :value="error_rate" class="flex-item" />
+        <el-statistic title="错误率" :value="outputErrorRate" :precision="2" class="flex-item">
+          <template #suffix>
+            <span>%</span>
+          </template>
+        </el-statistic>
         <el-statistic
           title="总请求数据量"
-          :value="total_requests"
+          :value="outputTotalRequests"
           class="flex-item"
         />
       </div>
