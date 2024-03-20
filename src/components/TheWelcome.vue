@@ -2,17 +2,22 @@
 import { ref, onMounted, watch } from "vue";
 import * as echarts from "echarts";
 import WelcomeItem from "./WelcomeItem.vue";
-import { useTransition } from '@vueuse/core'
+import { useTransition } from "@vueuse/core";
 
 const props = defineProps({
   receivedMessage: Object,
 });
+const selectedResponseTimes = ref([
+  "Median Response Time",
+  "95th Percentile Response Time",
+]);
+const unSetSelect = ref([]);
 const error_rate = ref(0);
-const outputErrorRate = useTransition(error_rate, {duration: 1000});
+const outputErrorRate = useTransition(error_rate, { duration: 1000 });
 const rps = ref(0);
-const outputRPS = useTransition(rps, {duration: 1000});
+const outputRPS = useTransition(rps, { duration: 1000 });
 const total_requests = ref(0);
-const outputTotalRequests = useTransition(total_requests, {duration: 1000});
+const outputTotalRequests = useTransition(total_requests, { duration: 1000 });
 
 const chartRPS = ref(null);
 const chartResponseTime = ref(null);
@@ -23,10 +28,7 @@ const ninetyFifthData = ref([]);
 const legendSelectedRPS = {
   rps: true,
 };
-const legendSelectedResponseTime = {
-  "Median Response Time": true,
-  "95th Percentile Response Time": true,
-};
+
 let rpsChart;
 let responseTimeChart;
 
@@ -66,68 +68,113 @@ const updateRPSChart = () => {
   }
 };
 
-const updateResponseTimeChart = () => {
+const updateResponseTimeChart = (str) => {
   if (responseTimeChart) {
     const series = [
       {
         name: "Median Response Time",
         type: "line",
         data: medianData.value.map((data) => data.value),
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectedResponseTimes.value.includes(
+              "Median Response Time"
+            )
+              ? 1
+              : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectedResponseTimes.value.includes("Median Response Time")
+            ? 1
+            : 0,
+        },
       },
       {
         name: "95th Percentile Response Time",
         type: "line",
         data: ninetyFifthData.value.map((data) => data.value),
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectedResponseTimes.value.includes(
+              "95th Percentile Response Time"
+            )
+              ? 1
+              : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectedResponseTimes.value.includes(
+            "95th Percentile Response Time"
+          )
+            ? 1
+            : 0,
+        },
       },
     ];
+    console.log("str", str);
     props.receivedMessage.api_results.forEach((apiResult) => {
       series.push(
         {
           name: `${apiResult.name} Median Response Time`,
           type: "line",
-          data: medianData.value
-            .map((data) => {
-              return {
-                value: apiResult.median_response_time,
-                timestamp: data.timestamp,
-              };
-            })
-            .map((data) => [data.timestamp, data.value]),
+          data: medianData.value.map((data) => [
+            data.timestamp,
+            apiResult.median_response_time,
+          ]),
           showInLegend: true,
+          itemStyle: {
+            normal: {
+              opacity: selectedResponseTimes.value.includes(
+                `${apiResult.name} Median Response Time`
+              )
+                ? 1
+                : 0,
+            },
+          },
+          lineStyle: {
+            opacity: selectedResponseTimes.value.includes(
+              `${apiResult.name} Median Response Time`
+            )
+              ? 1
+              : 0,
+          },
         },
         {
           name: `${apiResult.name} 95th Percentile Response Time`,
           type: "line",
-          data: ninetyFifthData.value
-            .map((data) => {
-              return {
-                value: apiResult.response_time_95,
-                timestamp: data.timestamp,
-              };
-            })
-            .map((data) => [data.timestamp, data.value]),
+          data: ninetyFifthData.value.map((data) => [
+            data.timestamp,
+            apiResult.response_time_95,
+          ]),
           showInLegend: true,
+          itemStyle: {
+            normal: {
+              opacity: selectedResponseTimes.value.includes(
+                `${apiResult.name} 95th Percentile Response Time`
+              )
+                ? 1
+                : 0,
+            },
+          },
+          lineStyle: {
+            opacity: selectedResponseTimes.value.includes(
+              `${apiResult.name} 95th Percentile Response Time`
+            )
+              ? 1
+              : 0,
+          },
         }
       );
     });
-    props.receivedMessage.api_results.forEach((apiResult) => {
-      legendSelectedResponseTime[
-        `${apiResult.name} Median Response Time`
-      ] = false; // 初始不选中
-      legendSelectedResponseTime[
-        `${apiResult.name} 95th Percentile Response Time`
-      ] = false; // 初始不选中
-    });
+    console.log("series", series);
 
     responseTimeChart.setOption({
       xAxis: {
         data: medianData.value.map((data) => data.timestamp),
       },
-      legend: {
-        data: series.map((s) => s.name),
-        selected: legendSelectedResponseTime,
-      },
-
       series: series,
     });
   }
@@ -164,6 +211,7 @@ watch(
       const newTimestamp = new Date(newVal.timestamp).toLocaleTimeString();
       rpsData.value.push({ timestamp: newTimestamp, value: newVal.rps });
 
+      console.log("newVal", newVal.api_results);
       // if (rpsData.value.length > 20) rpsData.value.shift();
       updateRPSChart();
       error_rate.value = newVal.error_rate;
@@ -177,12 +225,40 @@ watch(
         timestamp: newTimestamp,
         value: newVal.response_time_95,
       });
+
+      if (unSetSelect.value.length === 0) {
+        newVal.api_results.forEach((apiResult) => {
+          unSetSelect.value.push(
+            {
+              name: `${apiResult.name} Median Response Time`,
+              label: `${apiResult.name} Median Response Time`,
+            },
+            {
+              name: `${apiResult.name} 95th Percentile Response Time`,
+              label: `${apiResult.name} 95th Percentile Response Time`,
+            }
+          );
+        });
+      }
+
+      console.log("unSetSelect", unSetSelect.value);
       // if (medianData.value.length > 20) medianData.value.shift();
       // if (ninetyFifthData.value.length > 20) ninetyFifthData.value.shift();
       updateResponseTimeChart();
     }
   },
   { deep: true }
+);
+// 监听selectedResponseTimes的变化
+watch(
+  selectedResponseTimes,
+  () => {
+    // 当选中的响应时间变化时，更新响应时间图表
+    updateResponseTimeChart("selectChange");
+  },
+  {
+    deep: true, // 深度监听，以便于捕获数组内部值的变化
+  }
 );
 </script>
 
@@ -197,25 +273,26 @@ watch(
         flex-direction: column; /* 子元素垂直排列 */
         align-items: center; /* 水平居中 */
         text-align: center;
-        padding-top: 2rem;
+        padding-top: 1rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
       "
     >
-      <div class="flex-item">
-        <el-statistic title="RPS" :precision="2" :value="outputRPS" />
-      </div>
-      <div class="flex-row">
-        <el-statistic title="错误率" :value="outputErrorRate" :precision="2" class="flex-item">
-          <template #suffix>
-            <span>%</span>
-          </template>
-        </el-statistic>
-        <el-statistic
-          title="总请求数据量"
-          :value="outputTotalRequests"
-          class="flex-item"
-        />
-      </div>
+      <el-statistic title="RPS" :precision="2" :value="outputRPS" />
+      <el-statistic
+        title="错误率"
+        :value="outputErrorRate"
+        :precision="2"
+        class="flex-item"
+      >
+        <template #suffix>
+          <span>%</span>
+        </template>
+      </el-statistic>
+      <el-statistic
+        title="总请求数据量"
+        :value="outputTotalRequests"
+        class="flex-item"
+      />
     </div>
   </WelcomeItem>
   <WelcomeItem>
@@ -223,7 +300,36 @@ watch(
     <div ref="chartRPS" style="width: 600px; height: 265px"></div>
   </WelcomeItem>
   <WelcomeItem>
-    <template #heading>响应时间</template>
+    <template #heading
+      >响应时间
+      <div style="float: right; width: 30%; margin-right: 4rem">
+        <el-select
+          v-model="selectedResponseTimes"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="请选择"
+        >
+          <el-option
+            label="中位响应时间"
+            value="Median Response Time"
+          ></el-option>
+          <el-option
+            label="95百分位响应时间"
+            value="95th Percentile Response Time"
+          ></el-option>
+          <!-- 动态添加其他响应时间系列选项 -->
+
+          <el-option
+            v-for="option in unSetSelect"
+            :key="option.name"
+            :label="option.label"
+            :value="option.name"
+          >
+          </el-option>
+        </el-select></div
+    ></template>
+
     <div ref="chartResponseTime" style="width: 600px; height: 265px"></div>
   </WelcomeItem>
 </template>

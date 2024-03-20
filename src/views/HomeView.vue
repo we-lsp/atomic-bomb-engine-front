@@ -6,7 +6,7 @@ import HelloWorld from "../components/HelloWorld.vue";
 
 import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
-import {ElNotification} from "element-plus";
+import { ElNotification } from "element-plus";
 const debounceTimer = ref(null);
 const message = ref("");
 const httpIsError = ref(false);
@@ -88,20 +88,20 @@ const formatPrice = (row, column, cellValue, index) => {
   return Number(cellValue).toFixed(2);
 };
 const formatPriceWithPercentage = (row, column, cellValue, index) => {
-  if (cellValue === 0.0){
-    return "-"
+  if (cellValue === 0.0) {
+    return "-";
   }
   const formattedValue = formatPrice(row, column, cellValue, index);
   return `${formattedValue}%`;
 };
 
-const getColor = (value) =>{
+const getColor = (value) => {
   if (value < 10) {
-    return 'green';
+    return "green";
   } else if (value < 50) {
-    return 'orange';
+    return "orange";
   } else {
-    return 'red';
+    return "red";
   }
 };
 
@@ -124,7 +124,7 @@ const run = async () => {
     httpData.value = response.data.http_errors;
     assertData.value = response.data.assert_errors;
     api_resultsData.value = response.data.api_results;
-    ElNotification.success({title:"压测已完成"})
+    ElNotification.success({ title: "压测已完成" });
   }
 };
 </script>
@@ -195,9 +195,16 @@ const run = async () => {
       <el-table-column prop="err_count" label="错误数量" />
       <el-table-column prop="error_rate" label="错误率">
         <template v-slot:default="scope">
-    <span :style="{ color: getColor(scope.row.error_rate) }">
-      {{ formatPriceWithPercentage(scope.row, 'error_rate', scope.row.error_rate, scope.$index) }}
-    </span>
+          <span :style="{ color: getColor(scope.row.error_rate) }">
+            {{
+              formatPriceWithPercentage(
+                scope.row,
+                "error_rate",
+                scope.row.error_rate,
+                scope.$index
+              )
+            }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="min_response_time" label="最小响应时间(ms)" />
@@ -354,6 +361,7 @@ header {
   max-height: 100vh;
 }
 footer {
+  margin-top: 1.5rem;
   text-align: center;
 }
 .logo {
