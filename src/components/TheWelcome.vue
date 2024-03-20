@@ -194,7 +194,7 @@ onMounted(() => {
 
   responseTimeChart.setOption({
     tooltip: { trigger: "axis" },
-    legend: { data: ["Median Response Time", "95th Percentile Response Time"] },
+
     xAxis: { type: "category", boundaryGap: false, data: [] },
     yAxis: { type: "value" },
     series: [
@@ -300,36 +300,44 @@ watch(
     <div ref="chartRPS" style="width: 600px; height: 265px"></div>
   </WelcomeItem>
   <WelcomeItem>
-    <template #heading
-      >响应时间
-      <div style="float: right; width: 30%; margin-right: 4rem">
-        <el-select
-          v-model="selectedResponseTimes"
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          placeholder="请选择"
+    <template #heading>响应时间 </template>
+    <div
+      style="
+        width: 55%;
+        float: left;
+        margin-left: 20%;
+        position: absolute;
+        z-index: 99;
+      "
+    >
+      <el-select
+        v-model="selectedResponseTimes"
+        multiple
+        size="small"
+        collapse-tags
+        collapse-tags-tooltip
+        :max-collapse-tags="2"
+        placeholder="请选择"
+      >
+        <el-option
+          label="中位响应时间"
+          value="Median Response Time"
+        ></el-option>
+        <el-option
+          label="95百分位响应时间"
+          value="95th Percentile Response Time"
+        ></el-option>
+        <!-- 动态添加其他响应时间系列选项 -->
+
+        <el-option
+          v-for="option in unSetSelect"
+          :key="option.name"
+          :label="option.label"
+          :value="option.name"
         >
-          <el-option
-            label="中位响应时间"
-            value="Median Response Time"
-          ></el-option>
-          <el-option
-            label="95百分位响应时间"
-            value="95th Percentile Response Time"
-          ></el-option>
-          <!-- 动态添加其他响应时间系列选项 -->
-
-          <el-option
-            v-for="option in unSetSelect"
-            :key="option.name"
-            :label="option.label"
-            :value="option.name"
-          >
-          </el-option>
-        </el-select></div
-    ></template>
-
+        </el-option>
+      </el-select>
+    </div>
     <div ref="chartResponseTime" style="width: 600px; height: 265px"></div>
   </WelcomeItem>
 </template>
