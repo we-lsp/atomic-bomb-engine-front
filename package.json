@@ -15,6 +15,7 @@
     "echarts": "^5.5.0",
     "echarts-gl": "^2.0.9",
     "element-plus": "^2.6.1",
+    "nanoid": "^5.0.6",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
