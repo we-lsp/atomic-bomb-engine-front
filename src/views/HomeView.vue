@@ -7,6 +7,8 @@ import HelloWorld from "../components/HelloWorld.vue";
 import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
+import { nanoid } from 'nanoid';
+
 const debounceTimer = ref(null);
 const message = ref("");
 const httpIsError = ref(false);
@@ -18,11 +20,11 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-const ws = new WebSocket(`ws://${baseURL}/ws`);
+const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 // const ws = new WebSocket(`ws://localhost:8000/ws`);
 let heartbeatTimer;
 onMounted(() => {
-  let heartbeatInterval = 5000;
+  let heartbeatInterval = 3000;
 
   const startHeartbeat = () => {
     if (heartbeatTimer) {
