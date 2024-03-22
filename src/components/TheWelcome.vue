@@ -6,6 +6,7 @@ import { useTransition } from "@vueuse/core";
 
 const props = defineProps({
   receivedMessage: Object,
+  history: Array,
 });
 const selectedResponseTimes = ref([
   "Median Response Time",
@@ -202,6 +203,11 @@ onMounted(() => {
       { name: "95th Percentile Response Time", type: "line", data: [] },
     ],
   });
+  console.log("chart history", props.history)
+  if (props.history.length > 0){
+    console.log(props.history)
+    // todo: 更新charts
+  }
 });
 
 watch(

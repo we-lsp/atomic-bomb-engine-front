@@ -11,19 +11,22 @@ import { nanoid } from 'nanoid';
 
 const debounceTimer = ref(null);
 const message = ref("");
+const history = ref([]);
+const historyLoaded = ref(false);
 const httpIsError = ref(false);
 const assertIsError = ref(false);
-const buttonShow = ref(true);
+const buttonShow = ref(false);
 const httpData = ref([]);
 const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+const baseURL = `127.0.0.1:8000`; // 拼接域名和端口号
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 // const ws = new WebSocket(`ws://localhost:8000/ws`);
 let heartbeatTimer;
-onMounted(() => {
+onMounted(async () => {
   let heartbeatInterval = 3000;
 
   const startHeartbeat = () => {
@@ -71,6 +74,7 @@ onMounted(() => {
     console.log("WebSocket connection closed");
     clearInterval(heartbeatTimer);
   };
+  await getHistory()
 });
 function isValidJSON(text) {
   try {
@@ -129,6 +133,15 @@ const run = async () => {
     ElNotification.success({ title: "压测已完成" });
   }
 };
+
+const getHistory = async () => {
+  const response = await axios.get(`http://${baseURL}/history`)
+  if (response.data.length === 0){
+    buttonShow.value = true;
+  }
+  history.value = response.data;
+  historyLoaded.value = true;
+}
 </script>
 
 <template>
@@ -160,7 +173,7 @@ const run = async () => {
       </div>
     </div>
     <main>
-      <TheWelcome :receivedMessage="message" />
+      <TheWelcome v-if="historyLoaded" :receivedMessage="message" :history="history" />
     </main>
     <div v-if="httpIsError">
       <h3>HTTP错误</h3>
