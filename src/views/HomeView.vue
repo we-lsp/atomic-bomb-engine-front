@@ -51,16 +51,8 @@ onMounted(async () => {
       httpData.value = data.http_errors;
       assertData.value = data.assert_errors;
       api_resultsData.value = data.api_results;
-      if (httpData.value.length) {
-        httpIsError.value = true;
-      } else {
-        httpIsError.value = false;
-      }
-      if (assertData.value.length) {
-        assertIsError.value = true;
-      } else {
-        assertIsError.value = false;
-      }
+      httpIsError.value = !!httpData.value.length;
+      assertIsError.value = !!assertData.value.length;
     }
   };
 
