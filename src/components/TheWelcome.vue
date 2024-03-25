@@ -18,6 +18,8 @@ const rps = ref(0);
 const outputRPS = useTransition(rps, { duration: 1000 });
 const total_requests = ref(0);
 const outputTotalRequests = useTransition(total_requests, { duration: 1000 });
+const total_concurrent_number = ref(0);
+const outputTotalConcurrentNumber = useTransition(total_concurrent_number, {duration: 1000})
 
 const chartRPS = ref(null);
 const chartResponseTime = ref(null);
@@ -217,6 +219,7 @@ watch(
       error_rate.value = newVal.error_rate;
       rps.value = newVal.rps;
       total_requests.value = newVal.total_requests;
+      total_concurrent_number.value = newVal.total_concurrent_number;
       medianData.value.push({
         timestamp: newTimestamp,
         value: newVal.median_response_time,
@@ -265,35 +268,27 @@ watch(
 <template>
   <WelcomeItem>
     <!-- <template #heading>错误率 </template> -->
-    <div
-      style="
-        width: 200px;
-        height: 14rem;
-        display: flex;
-        flex-direction: column; /* 子元素垂直排列 */
-        align-items: center; /* 水平居中 */
-        text-align: center;
-        padding-top: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
-      "
-    >
+    <div style="display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 30px;
+                width: 200px;
+                align-items: center;
+                text-align: center;
+                padding-top: 1rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+                ">
       <el-statistic title="RPS" :precision="2" :value="outputRPS" />
-      <el-statistic
-        title="错误率"
-        :value="outputErrorRate"
-        :precision="2"
-        class="flex-item"
-      >
+      <el-statistic title="总并发量"  :value="outputTotalConcurrentNumber" />
+      <el-statistic title="错误率" :value="outputErrorRate" :precision="2">
         <template #suffix>
           <span>%</span>
         </template>
       </el-statistic>
-      <el-statistic
-        title="总请求数据量"
-        :value="outputTotalRequests"
-        class="flex-item"
-      />
+      <el-statistic title="总请求数量" :value="outputTotalRequests" />
     </div>
+
+
   </WelcomeItem>
   <WelcomeItem>
     <template #heading>RPS</template>
