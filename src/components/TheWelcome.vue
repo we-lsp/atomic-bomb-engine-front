@@ -210,13 +210,21 @@ onMounted(() => {
   });
   console.log("chart history", props.history)
   if (props.history.length > 0) {
+    // 更新左上角那个状态
+    let latestHistoryItem = props.history[props.history.length - 1]
+    rps.value = latestHistoryItem.rps
+    total_requests.value = latestHistoryItem.total_requests
+    total_concurrent_number.value = latestHistoryItem.total_concurrent_number
+    error_rate.value = latestHistoryItem.error_rate
 
     props.history.map(data => {
       rpsData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value:data.rps})
       medianData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value: data.median_response_time})
       ninetyFifthData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value: data.response_time_95})
     })
+    // todo: 更新table
 
+    // 更新charts
     const rpsSeries = [
       {
         name: "RPS",
