@@ -46,21 +46,24 @@ const updateRPSChart = () => {
     ];
 
     // 添加api_results 的 RPS 数据系列
-    props.receivedMessage.api_results.forEach((apiResult) => {
-      series.push({
-        name: `${apiResult.name} RPS`,
-        type: "line",
-        data: rpsData.value
-          .map((data) => {
-            return { value: apiResult.rps, timestamp: data.timestamp };
-          })
-          .map((data) => [data.timestamp, data.value]),
-        showInLegend: true,
+    if (props.receivedMessage) {
+      props.receivedMessage.api_results.forEach((apiResult) => {
+        series.push({
+          name: `${apiResult.name} RPS`,
+          type: "line",
+          data: rpsData.value
+              .map((data) => {
+                return { value: apiResult.rps, timestamp: data.timestamp };
+              })
+              .map((data) => [data.timestamp, data.value]),
+          showInLegend: true,
+        });
       });
-    });
-    props.receivedMessage.api_results.forEach((apiResult) => {
-      legendSelectedRPS[`${apiResult.name} RPS`] = false; // 初始不选中
-    });
+      props.receivedMessage.api_results.forEach((apiResult) => {
+        legendSelectedRPS[`${apiResult.name} RPS`] = false; // 初始不选中
+      });
+    }
+
     rpsChart.setOption({
       xAxis: {
         data: rpsData.value.map((data) => data.timestamp),
@@ -206,9 +209,50 @@ onMounted(() => {
     ],
   });
   console.log("chart history", props.history)
-  if (props.history.length > 0){
-    console.log(props.history)
-    // todo: 更新charts
+  if (props.history.length > 0) {
+
+    props.history.map(data => {
+      rpsData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value:data.rps})
+    })
+
+    const series = [
+      {
+        name: "RPS",
+        type: "line",
+        data: props.history.map(data => [new Date(data.timestamp).toLocaleTimeString(), data.rps]),
+      }
+    ];
+
+    const apiResultsSeries = props.history.flatMap(data =>
+        data.api_results.map(apiResult => ({
+          name: `${apiResult.name} RPS`,
+          type: "line",
+          data: [{value: apiResult.rps, timestamp: data.timestamp}],
+          showInLegend: true,
+        }))
+    );
+
+    apiResultsSeries.forEach(apiSeries => {
+      const existingSeries = series.find(s => s.name === apiSeries.name);
+      if (existingSeries) {
+        existingSeries.data.push(...apiSeries.data);
+      } else {
+        series.push(apiSeries);
+      }
+    });
+
+    props.history.flatMap(data => data.api_results).forEach(apiResult => {
+      legendSelectedRPS[`${apiResult.name} RPS`] = false;
+    });
+
+    rpsChart.setOption({
+      xAxis: {
+        data: props.history.map(data => new Date(data.timestamp).toLocaleTimeString()),
+      },
+      legend: { data: series.map(s => s.name), selected: legendSelectedRPS },
+      series: series,
+    });
+
   }
 });
 
@@ -220,7 +264,6 @@ watch(
       rpsData.value.push({ timestamp: newTimestamp, value: newVal.rps });
 
       console.log("newVal", newVal.api_results);
-      // if (rpsData.value.length > 20) rpsData.value.shift();
       updateRPSChart();
       error_rate.value = newVal.error_rate;
       rps.value = newVal.rps;
