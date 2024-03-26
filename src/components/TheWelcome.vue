@@ -213,9 +213,11 @@ onMounted(() => {
 
     props.history.map(data => {
       rpsData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value:data.rps})
+      medianData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value: data.median_response_time})
+      ninetyFifthData.value.push({timestamp: new Date(data.timestamp).toLocaleTimeString(), value: data.response_time_95})
     })
 
-    const series = [
+    const rpsSeries = [
       {
         name: "RPS",
         type: "line",
@@ -223,7 +225,53 @@ onMounted(() => {
       }
     ];
 
-    const apiResultsSeries = props.history.flatMap(data =>
+    const rtSeries = [
+      {
+        name: "Median Response Time",
+        type: "line",
+        data: props.history.map(data => [new Date(data.timestamp).toLocaleTimeString(), data.median_response_time]),
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectedResponseTimes.value.includes(
+                "Median Response Time"
+            )
+                ? 1
+                : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectedResponseTimes.value.includes("Median Response Time")
+              ? 1
+              : 0,
+        },
+      },
+      {
+        name: "95th Percentile Response Time",
+        type: "line",
+        data: props.history.map(data => [new Date(data.timestamp).toLocaleTimeString(), data.response_time_95]),
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectedResponseTimes.value.includes(
+                "95th Percentile Response Time"
+            )
+                ? 1
+                : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectedResponseTimes.value.includes(
+              "95th Percentile Response Time"
+          )
+              ? 1
+              : 0,
+        },
+      },
+    ];
+
+
+    const apiRpsSerpspsies = props.history.flatMap(data =>
         data.api_results.map(apiResult => ({
           name: `${apiResult.name} RPS`,
           type: "line",
@@ -232,12 +280,48 @@ onMounted(() => {
         }))
     );
 
-    apiResultsSeries.forEach(apiSeries => {
-      const existingSeries = series.find(s => s.name === apiSeries.name);
+    const apiMedianSeries = props.history.flatMap(data =>
+        data.api_results.map(apiResult => ({
+          name: `${apiResult.name} Median Response Time`,
+          type: "line",
+          data: [{value: apiResult.median_response_time, timestamp: data.timestamp}],
+          showInLegend: true,
+        }))
+    );
+
+    const api95Series = props.history.flatMap(data =>
+            data.api_results.map(apiResult => ({
+              name: `${apiResult.name} 95th Percentile Response Time`,
+              type: "line",
+              data: [{value: apiResult.response_time_95, timestamp: data.timestamp}],
+              showInLegend: true,
+            }))
+        );
+
+    apiRpsSerpspsies.forEach(apiSeries => {
+      const existingSeries = rpsSeries.find(s => s.name === apiSeries.name);
       if (existingSeries) {
         existingSeries.data.push(...apiSeries.data);
       } else {
-        series.push(apiSeries);
+        rpsSeries.push(apiSeries);
+      }
+    });
+
+    apiMedianSeries.forEach(apiSeries => {
+      const existingSeries = rtSeries.find(s => s.name === apiSeries.name);
+      if (existingSeries) {
+        existingSeries.data.push(...apiSeries.data);
+      } else {
+        rtSeries.push(apiSeries);
+      }
+    });
+
+    api95Series.forEach(apiSeries => {
+      const existingSeries = rtSeries.find(s => s.name === apiSeries.name);
+      if (existingSeries) {
+        existingSeries.data.push(...apiSeries.data);
+      } else {
+        rtSeries.push(apiSeries);
       }
     });
 
@@ -249,10 +333,16 @@ onMounted(() => {
       xAxis: {
         data: props.history.map(data => new Date(data.timestamp).toLocaleTimeString()),
       },
-      legend: { data: series.map(s => s.name), selected: legendSelectedRPS },
-      series: series,
+      legend: { data: rpsSeries.map(s => s.name), selected: legendSelectedRPS },
+      series: rpsSeries,
     });
 
+    responseTimeChart.setOption({
+      xAxis: {
+        data: props.history.map(data => new Date(data.timestamp).toLocaleTimeString()),
+      },
+      series: rtSeries,
+    });
   }
 });
 
