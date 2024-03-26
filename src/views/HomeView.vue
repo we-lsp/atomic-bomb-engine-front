@@ -66,6 +66,14 @@ onMounted(async () => {
     clearInterval(heartbeatTimer);
   };
   await getHistory()
+  if (history.value.length > 0){
+    let latestHistoryItem = history.value[history.value.length - 1];
+    api_resultsData.value = latestHistoryItem.api_results;
+    httpData.value = latestHistoryItem.http_errors;
+    assertData.value = latestHistoryItem.assert_errors;
+    httpIsError.value = !!httpData.value.length;
+    assertIsError.value = !!assertData.value.length;
+  }
 });
 function isValidJSON(text) {
   try {
