@@ -21,9 +21,10 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+const baseURL = "127.0.0.1:8000"
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
-// const ws = new WebSocket(`ws://localhost:8000/ws/${nanoid(8)}`);
+
 let heartbeatTimer;
 onMounted(async () => {
   let heartbeatInterval = 3000;
@@ -53,6 +54,11 @@ onMounted(async () => {
       api_resultsData.value = data.api_results;
       httpIsError.value = !!httpData.value.length;
       assertIsError.value = !!assertData.value.length;
+    } else {
+      switch (event.data) {
+        case "DONE":
+          ElNotification.success({ title: "压测完成" , duration: 0});
+      }
     }
   };
 
@@ -123,13 +129,12 @@ const run = async () => {
   if (buttonShow.value) {
     buttonShow.value = false;
     const response = await axios.get(`http://${baseURL}/run`);
-    // const response = await axios.get(`http://localhost:8000/run`);
     console.log("response", response.data);
-    message.value = response.data;
-    httpData.value = response.data.http_errors;
-    assertData.value = response.data.assert_errors;
-    api_resultsData.value = response.data.api_results;
-    ElNotification.success({ title: "压测已完成" });
+    if (response.data.success){
+      ElNotification.success({ title: response.data.message || "压测开始" });
+    } else {
+      ElNotification.warning({ title: response.data.message || "任务启动失败" });
+    }
   }
 };
 async function updateMessageAsync() {
@@ -147,7 +152,7 @@ const getHistory = async () => {
   }
   history.value = response.data;
 
-  updateMessageAsync();
+  await updateMessageAsync();
   historyLoaded.value = true;
 };
 </script>
