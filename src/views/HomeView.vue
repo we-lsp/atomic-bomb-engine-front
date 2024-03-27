@@ -117,6 +117,16 @@ const getColor = (value) => {
   }
 };
 
+const downloadObjectAsJson = (exportObj, exportName) =>{
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", exportName + ".json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
 const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
   debounceTimer.value = setTimeout(run, 1000); // 重新设置计时器
@@ -136,6 +146,9 @@ const run = async () => {
     } else {
       ElNotification.warning({ title: response.data.message || "任务启动失败" });
     }
+  } else {
+    const response = await axios.get(`http://${baseURL}/history`);
+    downloadObjectAsJson(response.data, Date.now())
   }
 };
 async function updateMessageAsync() {
@@ -177,12 +190,12 @@ const getHistory = async () => {
       </nav> -->
 
       <div class="login-box" @click="debounceRun">
-        <a href="#" :class="{ 'is-disabled': !buttonShow }">
+        <a href="#">
           <span></span>
           <span></span>
           <span></span>
           <span></span>
-          {{ buttonShow ? "开始" : "停止" }}
+          {{ buttonShow ? "开始" : "导出结果" }}
         </a>
       </div>
     </div>
