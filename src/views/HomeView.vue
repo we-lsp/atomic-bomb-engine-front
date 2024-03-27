@@ -21,8 +21,8 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-const baseURL = "127.0.0.1:8000"
+const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = "127.0.0.1:8000"
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
@@ -48,6 +48,7 @@ onMounted(async () => {
     if (isValidJSON(event.data)) {
       const data = JSON.parse(event.data);
       console.log("Message received: ", data);
+      buttonShow.value = false;
       message.value = data;
       httpData.value = data.http_errors;
       assertData.value = data.assert_errors;
