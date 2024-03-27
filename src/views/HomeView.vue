@@ -7,13 +7,15 @@ import HelloWorld from "../components/HelloWorld.vue";
 import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
-import { nanoid } from 'nanoid';
+import { nanoid } from "nanoid";
 
 const debounceTimer = ref(null);
 const message = ref("");
+const history = ref([]);
+const historyLoaded = ref(false);
 const httpIsError = ref(false);
 const assertIsError = ref(false);
-const buttonShow = ref(true);
+const buttonShow = ref(false);
 const httpData = ref([]);
 const assertData = ref([]);
 const api_resultsData = ref([]);
@@ -21,9 +23,9 @@ const hostname = window.location.hostname; // 获取当前页面的域名或IP�
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
-// const ws = new WebSocket(`ws://localhost:8000/ws`);
+// const ws = new WebSocket(`ws://localhost:8000/ws/${nanoid(8)}`);
 let heartbeatTimer;
-onMounted(() => {
+onMounted(async () => {
   let heartbeatInterval = 3000;
 
   const startHeartbeat = () => {
@@ -63,6 +65,15 @@ onMounted(() => {
     console.log("WebSocket connection closed");
     clearInterval(heartbeatTimer);
   };
+  await getHistory();
+  if (history.value.length > 0) {
+    let latestHistoryItem = history.value[history.value.length - 1];
+    api_resultsData.value = latestHistoryItem.api_results;
+    httpData.value = latestHistoryItem.http_errors;
+    assertData.value = latestHistoryItem.assert_errors;
+    httpIsError.value = !!httpData.value.length;
+    assertIsError.value = !!assertData.value.length;
+  }
 });
 function isValidJSON(text) {
   try {
@@ -120,6 +131,24 @@ const run = async () => {
     api_resultsData.value = response.data.api_results;
     ElNotification.success({ title: "压测已完成" });
   }
+};
+async function updateMessageAsync() {
+  for (let i = 0; i < history.value.length; i++) {
+    // 使用Promise和setTimeout来延迟更新message.value
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    message.value = history.value[i];
+  }
+}
+const getHistory = async () => {
+  const response = await axios.get(`http://${baseURL}/history`);
+  // const response = await axios.get(`http://localhost:8000/history`);
+  if (response.data.length === 0) {
+    buttonShow.value = true;
+  }
+  history.value = response.data;
+
+  updateMessageAsync();
+  historyLoaded.value = true;
 };
 </script>
 

@@ -6,6 +6,7 @@ import { useTransition } from "@vueuse/core";
 
 const props = defineProps({
   receivedMessage: Object,
+  history: Array,
 });
 const selectedResponseTimes = ref([
   "Median Response Time",
@@ -19,7 +20,9 @@ const outputRPS = useTransition(rps, { duration: 1000 });
 const total_requests = ref(0);
 const outputTotalRequests = useTransition(total_requests, { duration: 1000 });
 const total_concurrent_number = ref(0);
-const outputTotalConcurrentNumber = useTransition(total_concurrent_number, {duration: 1000})
+const outputTotalConcurrentNumber = useTransition(total_concurrent_number, {
+  duration: 1000,
+});
 
 const chartRPS = ref(null);
 const chartResponseTime = ref(null);
@@ -45,26 +48,32 @@ const updateRPSChart = () => {
     ];
 
     // 添加api_results 的 RPS 数据系列
-    props.receivedMessage.api_results.forEach((apiResult) => {
-      series.push({
-        name: `${apiResult.name} RPS`,
-        type: "line",
-        data: rpsData.value
-          .map((data) => {
-            return { value: apiResult.rps, timestamp: data.timestamp };
-          })
-          .map((data) => [data.timestamp, data.value]),
-        showInLegend: true,
+    if (props.receivedMessage) {
+      props.receivedMessage.api_results.forEach((apiResult) => {
+        series.push({
+          name: `${apiResult.name} RPS`,
+          type: "line",
+          data: rpsData.value
+            .map((data) => {
+              return { value: apiResult.rps, timestamp: data.timestamp };
+            })
+            .map((data) => [data.timestamp, data.value]),
+          showInLegend: true,
+        });
       });
-    });
-    props.receivedMessage.api_results.forEach((apiResult) => {
-      legendSelectedRPS[`${apiResult.name} RPS`] = false; // 初始不选中
-    });
+      props.receivedMessage.api_results.forEach((apiResult) => {
+        legendSelectedRPS[`${apiResult.name} RPS`] = false; // 初始不选中
+      });
+    }
+
     rpsChart.setOption({
       xAxis: {
         data: rpsData.value.map((data) => data.timestamp),
       },
-      legend: { data: series.map((s) => s.name), selected: legendSelectedRPS },
+      legend: {
+        data: series.map((s) => s.name),
+        selected: legendSelectedRPS,
+      },
       series: series,
     });
   }
@@ -204,17 +213,191 @@ onMounted(() => {
       { name: "95th Percentile Response Time", type: "line", data: [] },
     ],
   });
+  console.log("chart history", props.history);
+  // if (props.history.length > 0) {
+  //   // 更新左上角那个状态
+  //   let latestHistoryItem = props.history[props.history.length - 1];
+  //   rps.value = latestHistoryItem.rps;
+  //   total_requests.value = latestHistoryItem.total_requests;
+  //   total_concurrent_number.value = latestHistoryItem.total_concurrent_number;
+  //   error_rate.value = latestHistoryItem.error_rate;
+
+  //   props.history.map((data) => {
+  //     rpsData.value.push({
+  //       timestamp: new Date(data.timestamp).toLocaleTimeString(),
+  //       value: data.rps,
+  //     });
+  //     medianData.value.push({
+  //       timestamp: new Date(data.timestamp).toLocaleTimeString(),
+  //       value: data.median_response_time,
+  //     });
+  //     ninetyFifthData.value.push({
+  //       timestamp: new Date(data.timestamp).toLocaleTimeString(),
+  //       value: data.response_time_95,
+  //     });
+  //   });
+  //   // todo: 更新table
+
+  //   // 更新charts
+  //   const rpsSeries = [
+  //     {
+  //       name: "RPS",
+  //       type: "line",
+  //       data: props.history.map((data) => [
+  //         new Date(data.timestamp).toLocaleTimeString(),
+  //         data.rps,
+  //       ]),
+  //     },
+  //   ];
+
+  //   const rtSeries = [
+  //     {
+  //       name: "Median Response Time",
+  //       type: "line",
+  //       data: props.history.map((data) => [
+  //         new Date(data.timestamp).toLocaleTimeString(),
+  //         data.median_response_time,
+  //       ]),
+  //       showInLegend: true,
+  //       itemStyle: {
+  //         normal: {
+  //           opacity: selectedResponseTimes.value.includes(
+  //             "Median Response Time"
+  //           )
+  //             ? 1
+  //             : 0,
+  //         },
+  //       },
+  //       lineStyle: {
+  //         opacity: selectedResponseTimes.value.includes("Median Response Time")
+  //           ? 1
+  //           : 0,
+  //       },
+  //     },
+  //     {
+  //       name: "95th Percentile Response Time",
+  //       type: "line",
+  //       data: props.history.map((data) => [
+  //         new Date(data.timestamp).toLocaleTimeString(),
+  //         data.response_time_95,
+  //       ]),
+  //       showInLegend: true,
+  //       itemStyle: {
+  //         normal: {
+  //           opacity: selectedResponseTimes.value.includes(
+  //             "95th Percentile Response Time"
+  //           )
+  //             ? 1
+  //             : 0,
+  //         },
+  //       },
+  //       lineStyle: {
+  //         opacity: selectedResponseTimes.value.includes(
+  //           "95th Percentile Response Time"
+  //         )
+  //           ? 1
+  //           : 0,
+  //       },
+  //     },
+  //   ];
+
+  //   const apiRpsSerpspsies = props.history.flatMap((data) =>
+  //     data.api_results.map((apiResult) => ({
+  //       name: `${apiResult.name} RPS`,
+  //       type: "line",
+  //       data: [{ value: apiResult.rps, timestamp: data.timestamp }],
+  //       showInLegend: true,
+  //     }))
+  //   );
+
+  //   const apiMedianSeries = props.history.flatMap((data) =>
+  //     data.api_results.map((apiResult) => ({
+  //       name: `${apiResult.name} Median Response Time`,
+  //       type: "line",
+  //       data: [
+  //         { value: apiResult.median_response_time, timestamp: data.timestamp },
+  //       ],
+  //       showInLegend: true,
+  //     }))
+  //   );
+
+  //   const api95Series = props.history.flatMap((data) =>
+  //     data.api_results.map((apiResult) => ({
+  //       name: `${apiResult.name} 95th Percentile Response Time`,
+  //       type: "line",
+  //       data: [
+  //         { value: apiResult.response_time_95, timestamp: data.timestamp },
+  //       ],
+  //       showInLegend: true,
+  //     }))
+  //   );
+
+  //   apiRpsSerpspsies.forEach((apiSeries) => {
+  //     const existingSeries = rpsSeries.find((s) => s.name === apiSeries.name);
+  //     if (existingSeries) {
+  //       existingSeries.data.push(...apiSeries.data);
+  //     } else {
+  //       rpsSeries.push(apiSeries);
+  //     }
+  //   });
+
+  //   apiMedianSeries.forEach((apiSeries) => {
+  //     const existingSeries = rtSeries.find((s) => s.name === apiSeries.name);
+  //     if (existingSeries) {
+  //       existingSeries.data.push(...apiSeries.data);
+  //     } else {
+  //       rtSeries.push(apiSeries);
+  //     }
+  //   });
+
+  //   api95Series.forEach((apiSeries) => {
+  //     const existingSeries = rtSeries.find((s) => s.name === apiSeries.name);
+  //     if (existingSeries) {
+  //       existingSeries.data.push(...apiSeries.data);
+  //     } else {
+  //       rtSeries.push(apiSeries);
+  //     }
+  //   });
+
+  //   props.history
+  //     .flatMap((data) => data.api_results)
+  //     .forEach((apiResult) => {
+  //       legendSelectedRPS[`${apiResult.name} RPS`] = false;
+  //     });
+
+  //   rpsChart.setOption({
+  //     xAxis: {
+  //       data: props.history.map((data) =>
+  //         new Date(data.timestamp).toLocaleTimeString()
+  //       ),
+  //     },
+  //     legend: {
+  //       data: rpsSeries.map((s) => s.name),
+  //       selected: legendSelectedRPS,
+  //     },
+  //     series: rpsSeries,
+  //   });
+
+  //   responseTimeChart.setOption({
+  //     xAxis: {
+  //       data: props.history.map((data) =>
+  //         new Date(data.timestamp).toLocaleTimeString()
+  //       ),
+  //     },
+  //     series: rtSeries,
+  //   });
+  // }
 });
 
 watch(
   () => props.receivedMessage,
   (newVal) => {
+    console.log("newVal", newVal);
     if (newVal) {
       const newTimestamp = new Date(newVal.timestamp).toLocaleTimeString();
       rpsData.value.push({ timestamp: newTimestamp, value: newVal.rps });
 
       console.log("newVal", newVal.api_results);
-      // if (rpsData.value.length > 20) rpsData.value.shift();
       updateRPSChart();
       error_rate.value = newVal.error_rate;
       rps.value = newVal.rps;
@@ -228,10 +411,11 @@ watch(
         timestamp: newTimestamp,
         value: newVal.response_time_95,
       });
-
+      console.log("unSetSelect", unSetSelect.value);
       if (unSetSelect.value.length === 0) {
         newVal.api_results.forEach((apiResult) => {
-          unSetSelect.value.push(
+          if(apiResult.name){
+            unSetSelect.value.push(
             {
               name: `${apiResult.name} Median Response Time`,
               label: `${apiResult.name} Median Response Time`,
@@ -241,10 +425,11 @@ watch(
               label: `${apiResult.name} 95th Percentile Response Time`,
             }
           );
+          }
+
         });
       }
 
-      console.log("unSetSelect", unSetSelect.value);
       // if (medianData.value.length > 20) medianData.value.shift();
       // if (ninetyFifthData.value.length > 20) ninetyFifthData.value.shift();
       updateResponseTimeChart();
@@ -268,18 +453,22 @@ watch(
 <template>
   <WelcomeItem>
     <!-- <template #heading>错误率 </template> -->
-    <div style="display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
-                gap: 30px;
-                width: 200px;
-                align-items: center;
-                text-align: center;
-                padding-top: 1rem;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
-                ">
+    <div
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 30px;
+        width: 200px;
+        align-items: center;
+        text-align: center;
+        padding: 0.5rem;
+        height: 14.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+      "
+    >
       <el-statistic title="RPS" :precision="2" :value="outputRPS" />
-      <el-statistic title="总并发量"  :value="outputTotalConcurrentNumber" />
+      <el-statistic title="总并发量" :value="outputTotalConcurrentNumber" />
       <el-statistic title="错误率" :value="outputErrorRate" :precision="2">
         <template #suffix>
           <span>%</span>
@@ -287,8 +476,6 @@ watch(
       </el-statistic>
       <el-statistic title="总请求数量" :value="outputTotalRequests" />
     </div>
-
-
   </WelcomeItem>
   <WelcomeItem>
     <template #heading>RPS</template>
