@@ -11,7 +11,9 @@ const selectedResponseTimes = ref([
   "Median Response Time",
   "95th Percentile Response Time",
 ]);
+const selectedRPS = ref(["RPS"]);
 const unSetSelect = ref([]);
+const unSetRPSSelect = ref([]);
 const error_rate = ref(0);
 const outputErrorRate = useTransition(error_rate, { duration: 1000 });
 const rps = ref(0);
@@ -43,19 +45,44 @@ const updateRPSChart = () => {
         name: "RPS",
         type: "line",
         data: rpsData.value?.map((data) => [data.timestamp, data.value]),
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
+        },
       },
     ];
+    console.log(selectedRPS.value, "selectedRPS.value");
 
     // 添加api_results 的 RPS 数据系列
     if (props.receivedMessage) {
       props.receivedMessage.api_results.forEach((apiResult) => {
+        console.log("apiResult", apiResult);
         series.push({
           name: `${apiResult.name} RPS`,
           type: "line",
-          data: rpsData.value?.map((data) => {
+          data: rpsData.value
+            ?.map((data) => {
               return { value: apiResult.rps, timestamp: data.timestamp };
-            })?.map((data) => [data.timestamp, data.value]),
+            })
+            ?.map((data) => [data.timestamp, data.value]),
           showInLegend: true,
+          itemStyle: {
+            normal: {
+              opacity: selectedRPS.value.includes(`${apiResult.name} RPS`)
+                ? 1
+                : 0,
+            },
+          },
+          lineStyle: {
+            opacity: selectedRPS.value.includes(`${apiResult.name} RPS`)
+              ? 1
+              : 0,
+          },
         });
       });
       props.receivedMessage.api_results.forEach((apiResult) => {
@@ -67,10 +94,7 @@ const updateRPSChart = () => {
       xAxis: {
         data: rpsData.value?.map((data) => data.timestamp),
       },
-      legend: {
-        data: series?.map((s) => s.name),
-        selected: legendSelectedRPS,
-      },
+
       series: series,
     });
   }
@@ -122,7 +146,7 @@ const updateResponseTimeChart = (str) => {
         },
       },
     ];
-    console.log("str", str);
+    console.log("str", selectedResponseTimes.value);
     props.receivedMessage.api_results.forEach((apiResult) => {
       series.push(
         {
@@ -219,13 +243,22 @@ watch(
     if (newVal) {
       const newTimestamp = new Date(newVal.timestamp).toLocaleTimeString();
       rpsData.value.push({ timestamp: newTimestamp, value: newVal.rps });
-
+      if (unSetRPSSelect.value.length === 0) {
+        newVal.api_results.forEach((apiResult) => {
+          unSetRPSSelect.value.push({
+            name: `${apiResult.name} RPS`,
+            label: `${apiResult.name} RPS`,
+          });
+        });
+      }
       console.log("newVal", newVal.api_results);
       updateRPSChart();
-      error_rate.value = newVal.error_rate? newVal.error_rate: 0;
-      rps.value = newVal.rps? newVal.rps: 0;
-      total_requests.value = newVal.total_requests? newVal.total_requests: 0;
-      total_concurrent_number.value = newVal.total_concurrent_number? newVal.total_concurrent_number: 0;
+      error_rate.value = newVal.error_rate ? newVal.error_rate : 0;
+      rps.value = newVal.rps ? newVal.rps : 0;
+      total_requests.value = newVal.total_requests ? newVal.total_requests : 0;
+      total_concurrent_number.value = newVal.total_concurrent_number
+        ? newVal.total_concurrent_number
+        : 0;
       medianData.value.push({
         timestamp: newTimestamp,
         value: newVal.median_response_time,
@@ -234,22 +267,21 @@ watch(
         timestamp: newTimestamp,
         value: newVal.response_time_95,
       });
-      console.log("unSetSelect", unSetSelect.value);
+
       if (unSetSelect.value.length === 0) {
         newVal.api_results.forEach((apiResult) => {
-          if(apiResult.name){
+          if (apiResult.name) {
             unSetSelect.value.push(
-            {
-              name: `${apiResult.name} Median Response Time`,
-              label: `${apiResult.name} Median Response Time`,
-            },
-            {
-              name: `${apiResult.name} 95th Percentile Response Time`,
-              label: `${apiResult.name} 95th Percentile Response Time`,
-            }
-          );
+              {
+                name: `${apiResult.name} Median Response Time`,
+                label: `${apiResult.name} Median Response Time`,
+              },
+              {
+                name: `${apiResult.name} 95th Percentile Response Time`,
+                label: `${apiResult.name} 95th Percentile Response Time`,
+              }
+            );
           }
-
         });
       }
 
@@ -268,7 +300,17 @@ watch(
     updateResponseTimeChart("selectChange");
   },
   {
-    deep: true, // 深度监听，以便于捕获数组内部值的变化
+    deep: true,
+  }
+);
+watch(
+  selectedRPS,
+  () => {
+    // 当选中的响应时间变化时，更新响应时间图表
+    updateRPSChart("selectChange");
+  },
+  {
+    deep: true,
   }
 );
 </script>
@@ -278,31 +320,79 @@ watch(
     <!-- <template #heading>错误率 </template> -->
     <div
       style="
-        display: grid;
+        display: flex;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
         gap: 30px;
-        width: 200px;
+        width: 100%;
         align-items: center;
         text-align: center;
         padding: 0.5rem;
-        height: 14.5rem;
+        height: 5rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
       "
     >
-      <el-statistic title="RPS" :precision="2" :value="outputRPS" />
-      <el-statistic title="总并发量" :value="outputTotalConcurrentNumber" />
-      <el-statistic title="错误率" :value="outputErrorRate" :precision="2">
+      <el-statistic
+        title="RPS"
+        :precision="2"
+        :value="outputRPS"
+        style="flex: 1"
+      />
+      <el-statistic
+        title="总并发量"
+        :value="outputTotalConcurrentNumber"
+        style="flex: 1"
+      />
+      <el-statistic
+        title="错误率"
+        :value="outputErrorRate"
+        :precision="2"
+        style="flex: 1"
+      >
         <template #suffix>
           <span>%</span>
         </template>
       </el-statistic>
-      <el-statistic title="总请求数量" :value="outputTotalRequests" />
+      <el-statistic
+        title="总请求数量"
+        :value="outputTotalRequests"
+        style="flex: 1"
+      />
     </div>
   </WelcomeItem>
   <WelcomeItem>
     <template #heading>RPS</template>
-    <div ref="chartRPS" style="width: 600px; height: 265px"></div>
+    <div
+      style="
+        width: 55%;
+        float: left;
+        margin-left: 20%;
+        position: absolute;
+        z-index: 99;
+      "
+    >
+      <el-select
+        v-model="selectedRPS"
+        multiple
+        size="small"
+        collapse-tags
+        collapse-tags-tooltip
+        :max-collapse-tags="2"
+        placeholder="请选择"
+      >
+        <el-option label="RPS" value="RPS"></el-option>
+        <!-- 动态添加其他响应时间系列选项 -->
+
+        <el-option
+          v-for="option in unSetRPSSelect"
+          :key="option.name"
+          :label="option.label"
+          :value="option.name"
+        >
+        </el-option>
+      </el-select>
+    </div>
+    <div ref="chartRPS" style="width: 100%; height: 265px"></div>
   </WelcomeItem>
   <WelcomeItem>
     <template #heading>响应时间 </template>
@@ -343,7 +433,7 @@ watch(
         </el-option>
       </el-select>
     </div>
-    <div ref="chartResponseTime" style="width: 600px; height: 265px"></div>
+    <div ref="chartResponseTime" style="width: 100%; height: 265px"></div>
   </WelcomeItem>
 </template>
 <style scoped>
