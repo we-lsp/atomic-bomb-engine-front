@@ -22,6 +22,7 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = "http://localhost:8000";
 // const baseURL = "127.0.0.1:8000"
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
@@ -58,7 +59,7 @@ onMounted(async () => {
     } else {
       switch (event.data) {
         case "DONE":
-          ElNotification.success({ title: "压测完成" , duration: 0});
+          ElNotification.success({ title: "压测完成", duration: 0 });
       }
     }
   };
@@ -117,15 +118,17 @@ const getColor = (value) => {
   }
 };
 
-const downloadObjectAsJson = (exportObj, exportName) =>{
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-  const downloadAnchorNode = document.createElement('a');
+const downloadObjectAsJson = (exportObj, exportName) => {
+  const dataStr =
+    "data:text/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(exportObj));
+  const downloadAnchorNode = document.createElement("a");
   downloadAnchorNode.setAttribute("href", dataStr);
   downloadAnchorNode.setAttribute("download", exportName + ".json");
   document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
-}
+};
 
 const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
@@ -141,14 +144,16 @@ const run = async () => {
     buttonShow.value = false;
     const response = await axios.get(`http://${baseURL}/run`);
     console.log("response", response.data);
-    if (response.data.success){
+    if (response.data.success) {
       ElNotification.success({ title: response.data.message || "压测开始" });
     } else {
-      ElNotification.warning({ title: response.data.message || "任务启动失败" });
+      ElNotification.warning({
+        title: response.data.message || "任务启动失败",
+      });
     }
   } else {
     const response = await axios.get(`http://${baseURL}/history`);
-    downloadObjectAsJson(response.data, Date.now())
+    downloadObjectAsJson(response.data, Date.now());
   }
 };
 async function updateMessageAsync() {
@@ -173,17 +178,18 @@ const getHistory = async () => {
 
 <template>
   <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/atomic-bomb-engine-logo.png"
-      width="125"
-      height="125"
-    />
+    <div style="display: flex; align-items: center">
+      <img
+        alt="Vue logo"
+        class="logo"
+        src="@/assets/atomic-bomb-engine-logo.png"
+        width="125"
+        height="125"
+      />
+      <HelloWorld msg="压测报告" />
+    </div>
 
     <div class="wrapper">
-      <HelloWorld msg="压测报告" />
-
       <!-- <nav>
         <RouterLink to="/">2D</RouterLink>
         <RouterLink to="/about">3D</RouterLink>
@@ -395,7 +401,7 @@ const getHistory = async () => {
 }
 
 main {
-  display: flex;
+  /* display: flex; */
 }
 header {
   padding-top: 10px;
