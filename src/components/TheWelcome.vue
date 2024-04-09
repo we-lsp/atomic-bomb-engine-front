@@ -12,6 +12,8 @@ const selectedResponseTimes = ref([
   "95th Percentile Response Time",
 ]);
 const selectedRPS = ref(["RPS"]);
+const selectConcurrent_number = ref(["total_concurrent_number"]);
+const unSetConcurrent_numberSelect = ref([]);
 const unSetSelect = ref([]);
 const unSetRPSSelect = ref([]);
 const error_rate = ref(0);
@@ -27,7 +29,9 @@ const outputTotalConcurrentNumber = useTransition(total_concurrent_number, {
 
 const chartRPS = ref(null);
 const chartResponseTime = ref(null);
+const Concurrent_number = ref(null);
 const rpsData = ref([]);
+const Concurrent_numberData = ref([]);
 const medianData = ref([]);
 const ninetyFifthData = ref([]);
 const allMessages = ref([]);
@@ -38,7 +42,7 @@ const legendSelectedRPS = {
 
 let rpsChart;
 let responseTimeChart;
-
+let Concurrent_numberChart;
 const updateRPSChart = () => {
   if (rpsChart) {
     // 基础RPS系列
@@ -96,6 +100,7 @@ const updateRPSChart = () => {
         });
       });
     }
+    console.log("rpsseries", series);
 
     // 更新图表
     rpsChart.setOption({
@@ -108,178 +113,85 @@ const updateRPSChart = () => {
   }
 };
 
-// const updateRPSChart = () => {
-//   if (rpsChart) {
-//     const series = [
-//       {
-//         name: "RPS",
-//         type: "line",
-//         data: rpsData.value?.map((data) => [data.timestamp, data.value]),
-//         showInLegend: true,
-//         itemStyle: {
-//           normal: {
-//             opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
-//           },
-//         },
-//         lineStyle: {
-//           opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
-//         },
-//       },
-//     ];
+const updateConcurrent_numberChart = () => {
+  if (Concurrent_numberChart) {
+    let baseSeriesData = allMessages.value.map((message) => [
+      message.timestamp,
+      message.total_concurrent_number,
+    ]);
 
-//     // 添加api_results 的 RPS 数据系列
-//     if (props.receivedMessage) {
-//       props.receivedMessage.api_results.forEach((apiResult) => {
-//         console.log("apiResult", apiResult);
-//         series.push({
-//           name: `${apiResult.name} RPS`,
-//           type: "line",
-//           data: rpsData.value
-//             ?.map((data) => {
-//               console.log("apiResult.rps", apiResult.rps);
-//               return { value: apiResult.rps, timestamp: data.timestamp };
-//             })
-//             ?.map((data) => [data.timestamp, data.value]),
-//           showInLegend: true,
-//           itemStyle: {
-//             normal: {
-//               opacity: selectedRPS.value.includes(`${apiResult.name} RPS`)
-//                 ? 1
-//                 : 0,
-//             },
-//           },
-//           lineStyle: {
-//             opacity: selectedRPS.value.includes(`${apiResult.name} RPS`)
-//               ? 1
-//               : 0,
-//           },
-//         });
-//       });
-//       props.receivedMessage.api_results.forEach((apiResult) => {
-//         legendSelectedRPS[`${apiResult.name} RPS`] = false; // 初始不选中
-//       });
-//     }
+    const series = [
+      {
+        name: "total_concurrent_number",
+        type: "line",
+        data: baseSeriesData,
+        showInLegend: true,
+        itemStyle: {
+          normal: {
+            opacity: selectConcurrent_number.value.includes(
+              "total_concurrent_number"
+            )
+              ? 1
+              : 0,
+          },
+        },
+        lineStyle: {
+          opacity: selectConcurrent_number.value.includes(
+            "total_concurrent_number"
+          )
+            ? 1
+            : 0,
+        },
+      },
+    ];
 
-//     rpsChart.setOption({
-//       xAxis: {
-//         data: rpsData.value?.map((data) => data.timestamp),
-//       },
+    // 为allMessages中的每个api_results的RPS添加系列
+    if (allMessages.value.length > 0 && allMessages.value[0].api_results) {
+      allMessages.value[0].api_results.forEach((apiResult) => {
+        let apiSeriesData = allMessages.value.map((message) => {
+          const result = message.api_results.find(
+            (result) => result.name === apiResult.name
+          );
+          return result
+            ? [message.timestamp, result.concurrent_number]
+            : [message.timestamp, 0];
+        });
 
-//       series: series,
-//     });
-//   }
-// };
-
-// const updateResponseTimeChart = (str) => {
-//   if (responseTimeChart) {
-//     const series = [
-//       {
-//         name: "Median Response Time",
-//         type: "line",
-//         data: medianData.value?.map((data) => data.value),
-//         showInLegend: true,
-//         itemStyle: {
-//           normal: {
-//             opacity: selectedResponseTimes.value.includes(
-//               "Median Response Time"
-//             )
-//               ? 1
-//               : 0,
-//           },
-//         },
-//         lineStyle: {
-//           opacity: selectedResponseTimes.value.includes("Median Response Time")
-//             ? 1
-//             : 0,
-//         },
-//       },
-//       {
-//         name: "95th Percentile Response Time",
-//         type: "line",
-//         data: ninetyFifthData.value?.map((data) => data.value),
-//         showInLegend: true,
-//         itemStyle: {
-//           normal: {
-//             opacity: selectedResponseTimes.value.includes(
-//               "95th Percentile Response Time"
-//             )
-//               ? 1
-//               : 0,
-//           },
-//         },
-//         lineStyle: {
-//           opacity: selectedResponseTimes.value.includes(
-//             "95th Percentile Response Time"
-//           )
-//             ? 1
-//             : 0,
-//         },
-//       },
-//     ];
-
-//     props.receivedMessage.api_results.forEach((apiResult) => {
-//       series.push(
-//         {
-//           name: `${apiResult.name} Median Response Time`,
-//           type: "line",
-//           data: medianData.value?.map((data) => [
-//             data.timestamp,
-//             apiResult.median_response_time,
-//           ]),
-//           showInLegend: true,
-//           itemStyle: {
-//             normal: {
-//               opacity: selectedResponseTimes.value.includes(
-//                 `${apiResult.name} Median Response Time`
-//               )
-//                 ? 1
-//                 : 0,
-//             },
-//           },
-//           lineStyle: {
-//             opacity: selectedResponseTimes.value.includes(
-//               `${apiResult.name} Median Response Time`
-//             )
-//               ? 1
-//               : 0,
-//           },
-//         },
-//         {
-//           name: `${apiResult.name} 95th Percentile Response Time`,
-//           type: "line",
-//           data: ninetyFifthData.value?.map((data) => [
-//             data.timestamp,
-//             apiResult.response_time_95,
-//           ]),
-//           showInLegend: true,
-//           itemStyle: {
-//             normal: {
-//               opacity: selectedResponseTimes.value.includes(
-//                 `${apiResult.name} 95th Percentile Response Time`
-//               )
-//                 ? 1
-//                 : 0,
-//             },
-//           },
-//           lineStyle: {
-//             opacity: selectedResponseTimes.value.includes(
-//               `${apiResult.name} 95th Percentile Response Time`
-//             )
-//               ? 1
-//               : 0,
-//           },
-//         }
-//       );
-//     });
-
-//     responseTimeChart.setOption({
-//       xAxis: {
-//         data: medianData.value?.map((data) => data.timestamp),
-//       },
-//       series: series,
-//     });
-//   }
-// };
+        series.push({
+          name: `${apiResult.name} concurrent_number`,
+          type: "line",
+          data: apiSeriesData,
+          showInLegend: true,
+          itemStyle: {
+            normal: {
+              opacity: selectConcurrent_number.value.includes(
+                `${apiResult.name} concurrent_number`
+              )
+                ? 1
+                : 0,
+            },
+          },
+          lineStyle: {
+            opacity: selectConcurrent_number.value.includes(
+              `${apiResult.name} concurrent_number`
+            )
+              ? 1
+              : 0,
+          },
+        });
+      });
+    }
+    console.log("series", series);
+    // 更新图表
+    Concurrent_numberChart.setOption({
+      xAxis: {
+        type: "time",
+        data: allMessages.value.map((message) => new Date(message.timestamp)),
+      },
+      series: series,
+    });
+  }
+};
 
 const updateResponseTimeChart = () => {
   if (responseTimeChart && allMessages.value.length > 0) {
@@ -413,7 +325,7 @@ const updateResponseTimeChart = () => {
 onMounted(() => {
   rpsChart = echarts.init(chartRPS.value);
   responseTimeChart = echarts.init(chartResponseTime.value);
-
+  Concurrent_numberChart = echarts.init(Concurrent_number.value);
   rpsChart.setOption({
     tooltip: { trigger: "axis" },
     legend: { data: ["RPS"] },
@@ -421,10 +333,15 @@ onMounted(() => {
     yAxis: { type: "value" },
     series: [{ name: "RPS", type: "line", data: [] }],
   });
-
+  Concurrent_numberChart.setOption({
+    tooltip: { trigger: "axis" },
+    legend: { data: ["concurrent_number"] },
+    xAxis: { type: "category", boundaryGap: false, data: [] },
+    yAxis: { type: "value" },
+    series: [{ name: "concurrent_number", type: "line", data: [] }],
+  });
   responseTimeChart.setOption({
     tooltip: { trigger: "axis" },
-
     xAxis: { type: "category", boundaryGap: false, data: [] },
     yAxis: { type: "value" },
     series: [
@@ -441,7 +358,11 @@ watch(
       allMessages.value.push(newVal);
       console.log("newVal", newVal);
       const newTimestamp = new Date(newVal.timestamp).toLocaleTimeString();
-      rpsData.value.push({ timestamp: newTimestamp, value: newVal.rps });
+      rpsData.value.push({
+        timestamp: newTimestamp,
+        value: newVal.total_concurrent_number,
+      });
+
       if (unSetRPSSelect.value.length === 0) {
         newVal.api_results.forEach((apiResult) => {
           unSetRPSSelect.value.push({
@@ -451,6 +372,19 @@ watch(
         });
       }
       updateRPSChart();
+      Concurrent_numberData.value.push({
+        timestamp: newTimestamp,
+        value: newVal.rps,
+      });
+      if (unSetConcurrent_numberSelect.value.length === 0) {
+        newVal.api_results.forEach((apiResult) => {
+          unSetConcurrent_numberSelect.value.push({
+            name: `${apiResult.name} concurrent_number`,
+            label: `${apiResult.name} concurrent_number`,
+          });
+        });
+      }
+      updateConcurrent_numberChart();
       error_rate.value = newVal.error_rate ? newVal.error_rate : 0;
       rps.value = newVal.rps ? newVal.rps : 0;
       total_requests.value = newVal.total_requests ? newVal.total_requests : 0;
@@ -511,18 +445,16 @@ watch(
     deep: true,
   }
 );
-// watch(
-//   props.receivedMessage,
-//   (newMessage) => {
-//     if (newMessage) {
-//       allMessages.value.push(newMessage);
-//       console.log("allMessages", allMessages);
-//       updateRPSChart(); // 更新图表
-//       updateResponseTimeChart(); // 根据需要更新响应时间图表
-//     }
-//   },
-//   { deep: true }
-// );
+watch(
+  selectConcurrent_number,
+  () => {
+    // 当选中的响应时间变化时，更新响应时间图表
+    updateConcurrent_numberChart("selectChange");
+  },
+  {
+    deep: true,
+  }
+);
 </script>
 
 <template>
@@ -644,6 +576,43 @@ watch(
       </el-select>
     </div>
     <div ref="chartResponseTime" style="width: 100%; height: 265px"></div>
+  </WelcomeItem>
+  <WelcomeItem>
+    <template #heading>并发量</template>
+    <div
+      style="
+        width: 55%;
+        float: left;
+        margin-left: 20%;
+        position: absolute;
+        z-index: 99;
+      "
+    >
+      <el-select
+        v-model="selectConcurrent_number"
+        multiple
+        size="small"
+        collapse-tags
+        collapse-tags-tooltip
+        :max-collapse-tags="2"
+        placeholder="请选择"
+      >
+        <el-option
+          label="total_concurrent_number"
+          value="total_concurrent_number"
+        ></el-option>
+        <!-- 动态添加其他响应时间系列选项 -->
+
+        <el-option
+          v-for="option in unSetConcurrent_numberSelect"
+          :key="option.name"
+          :label="option.label"
+          :value="option.name"
+        >
+        </el-option>
+      </el-select>
+    </div>
+    <div ref="Concurrent_number" style="width: 100%; height: 265px"></div>
   </WelcomeItem>
 </template>
 <style scoped>
