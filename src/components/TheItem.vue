@@ -1,11 +1,12 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import * as echarts from "echarts";
-import WelcomeItem from "./WelcomeItem.vue";
+import itemView from "./ItemView.vue";
 import { useTransition } from "@vueuse/core";
 
 const props = defineProps({
   receivedMessage: Object,
+  receivedMessageList: Array,
 });
 const selectedResponseTimes = ref([
   "Median Response Time",
@@ -35,9 +36,27 @@ const Concurrent_numberData = ref([]);
 const medianData = ref([]);
 const ninetyFifthData = ref([]);
 const allMessages = ref([]);
+const downsampleData = (data, sampleRate) => {
+  const sampledData = [];
+  let sum = 0;
+  let count = 0;
 
-const legendSelectedRPS = {
-  rps: true,
+  for (let i = 0; i < data.length; i++) {
+    sum += data[i];
+    count++;
+    if (count === sampleRate) {
+      sampledData.push(sum / count);
+      sum = 0;
+      count = 0;
+    }
+  }
+
+  // 确保最后的数据也被计算进去
+  if (count > 0) {
+    sampledData.push(sum / count);
+  }
+
+  return sampledData;
 };
 
 let rpsChart;
@@ -57,6 +76,7 @@ const updateRPSChart = () => {
         type: "line",
         data: baseSeriesData,
         showInLegend: true,
+
         itemStyle: {
           normal: {
             opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
@@ -85,6 +105,14 @@ const updateRPSChart = () => {
           type: "line",
           data: apiSeriesData,
           showInLegend: true,
+          sampling: {
+            type: "average",
+            rate: 0.1,
+            interval: 2,
+            bias: 0.5,
+          },
+          smooth: true,
+          showSymbol: false,
           itemStyle: {
             normal: {
               opacity: selectedRPS.value.includes(`${apiResult.name} RPS`)
@@ -108,6 +136,7 @@ const updateRPSChart = () => {
         type: "time",
         data: allMessages.value.map((message) => new Date(message.timestamp)),
       },
+
       series: series,
     });
   }
@@ -162,6 +191,14 @@ const updateConcurrent_numberChart = () => {
           type: "line",
           data: apiSeriesData,
           showInLegend: true,
+          sampling: {
+            type: "average",
+            rate: 0.1,
+            interval: 2,
+            bias: 0.5,
+          },
+          smooth: true,
+          showSymbol: false,
           itemStyle: {
             normal: {
               opacity: selectConcurrent_number.value.includes(
@@ -252,6 +289,14 @@ const updateResponseTimeChart = () => {
       series.push({
         name: `${apiResult.name} Median Response Time`,
         type: "line",
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
         data: allMessages.value.map((message) => {
           const result = message.api_results.find(
             (result) => result.name === apiResult.name
@@ -283,6 +328,14 @@ const updateResponseTimeChart = () => {
       series.push({
         name: `${apiResult.name} 95th Percentile Response Time`,
         type: "line",
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
         data: allMessages.value.map((message) => {
           const result = message.api_results.find(
             (result) => result.name === apiResult.name
@@ -331,25 +384,155 @@ onMounted(() => {
     legend: { data: ["RPS"] },
     xAxis: { type: "category", boundaryGap: false, data: [] },
     yAxis: { type: "value" },
-    series: [{ name: "RPS", type: "line", data: [] }],
+    series: [
+      {
+        name: "RPS",
+        type: "line",
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
+        data: [],
+      },
+    ],
   });
   Concurrent_numberChart.setOption({
     tooltip: { trigger: "axis" },
     legend: { data: ["concurrent_number"] },
     xAxis: { type: "category", boundaryGap: false, data: [] },
     yAxis: { type: "value" },
-    series: [{ name: "concurrent_number", type: "line", data: [] }],
+    series: [
+      {
+        name: "concurrent_number",
+        type: "line",
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
+        data: [],
+      },
+    ],
   });
   responseTimeChart.setOption({
     tooltip: { trigger: "axis" },
     xAxis: { type: "category", boundaryGap: false, data: [] },
     yAxis: { type: "value" },
     series: [
-      { name: "Median Response Time", type: "line", data: [] },
-      { name: "95th Percentile Response Time", type: "line", data: [] },
+      {
+        name: "Median Response Time",
+        type: "line",
+        data: [],
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
+      },
+      {
+        name: "95th Percentile Response Time",
+        type: "line",
+        data: [],
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
+      },
     ],
   });
 });
+
+watch(
+  () => props.receivedMessageList,
+  (newVal) => {
+    if (newVal) {
+      const sampleRate = 10;
+
+      allMessages.value = newVal;
+      console.log("newVal", newVal);
+      for (let i = 0; i < newVal.length; i++) {
+        const newTimestamp = new Date(newVal[i].timestamp).toLocaleTimeString();
+        rpsData.value.push({
+          timestamp: newTimestamp,
+          value: newVal[i].total_concurrent_number,
+        });
+        if (unSetRPSSelect.value.length === 0) {
+          newVal[i].api_results.forEach((apiResult) => {
+            unSetRPSSelect.value.push({
+              name: `${apiResult.name} RPS`,
+              label: `${apiResult.name} RPS`,
+            });
+          });
+        }
+        Concurrent_numberData.value.push({
+          timestamp: newTimestamp,
+          value: newVal[i].rps,
+        });
+        if (unSetConcurrent_numberSelect.value.length === 0) {
+          newVal[i].api_results.forEach((apiResult) => {
+            unSetConcurrent_numberSelect.value.push({
+              name: `${apiResult.name} concurrent_number`,
+              label: `${apiResult.name} concurrent_number`,
+            });
+          });
+        }
+
+        error_rate.value = newVal[i].error_rate ? newVal[i].error_rate : 0;
+        rps.value = newVal[i].rps ? newVal[i].rps : 0;
+        total_requests.value = newVal[i].total_requests
+          ? newVal[i].total_requests
+          : 0;
+        total_concurrent_number.value = newVal[i].total_concurrent_number
+          ? newVal[i].total_concurrent_number
+          : 0;
+        medianData.value.push({
+          timestamp: newTimestamp,
+          value: newVal[i].median_response_time,
+        });
+        ninetyFifthData.value.push({
+          timestamp: newTimestamp,
+          value: newVal[i].response_time_95,
+        });
+
+        if (unSetSelect.value.length === 0) {
+          newVal[i].api_results.forEach((apiResult) => {
+            if (apiResult.name) {
+              unSetSelect.value.push(
+                {
+                  name: `${apiResult.name} Median Response Time`,
+                  label: `${apiResult.name} Median Response Time`,
+                },
+                {
+                  name: `${apiResult.name} 95th Percentile Response Time`,
+                  label: `${apiResult.name} 95th Percentile Response Time`,
+                }
+              );
+            }
+          });
+        }
+      }
+
+      updateRPSChart();
+      updateConcurrent_numberChart();
+      updateResponseTimeChart();
+    }
+  },
+  { deep: true }
+);
 
 watch(
   () => props.receivedMessage,
@@ -458,7 +641,7 @@ watch(
 </script>
 
 <template>
-  <WelcomeItem>
+  <itemView>
     <!-- <template #heading>错误率 </template> -->
     <div
       style="
@@ -501,8 +684,8 @@ watch(
         style="flex: 1"
       />
     </div>
-  </WelcomeItem>
-  <WelcomeItem>
+  </itemView>
+  <itemView>
     <template #heading>RPS</template>
     <div
       style="
@@ -535,8 +718,8 @@ watch(
       </el-select>
     </div>
     <div ref="chartRPS" style="width: 100%; height: 265px"></div>
-  </WelcomeItem>
-  <WelcomeItem>
+  </itemView>
+  <itemView>
     <template #heading>响应时间 </template>
     <div
       style="
@@ -576,8 +759,8 @@ watch(
       </el-select>
     </div>
     <div ref="chartResponseTime" style="width: 100%; height: 265px"></div>
-  </WelcomeItem>
-  <WelcomeItem>
+  </itemView>
+  <itemView>
     <template #heading>并发量</template>
     <div
       style="
@@ -613,7 +796,7 @@ watch(
       </el-select>
     </div>
     <div ref="Concurrent_number" style="width: 100%; height: 265px"></div>
-  </WelcomeItem>
+  </itemView>
 </template>
 <style scoped>
 .flex-row {

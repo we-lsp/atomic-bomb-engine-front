@@ -15,7 +15,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/run": {
+      "/localhost": {
         target: "http://localhost:8000",
         changeOrigin: true,
       },
