@@ -1,6 +1,5 @@
 <script setup>
 import TheItem from "../components/TheItem.vue";
-import { RouterLink, RouterView } from "vue-router";
 
 import mainView from "../components/MainView.vue";
 
@@ -8,7 +7,6 @@ import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
 import { nanoid } from "nanoid";
-import historyJson from "../../../testHistory.json";
 const debounceTimer = ref(null);
 const message = ref("");
 const history = ref([]);
@@ -164,7 +162,6 @@ async function updateMessageAsync() {
   }
 }
 const getHistory = async () => {
-  console.log(historyJson);
   const response = await axios.get(`http://${baseURL}/history`);
   // const response = await axios.get(`http://localhost:8000/history`);
   if (response.data.length === 0) {
