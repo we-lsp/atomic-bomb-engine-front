@@ -1,14 +1,12 @@
 <script setup>
-import TheWelcome from "../components/TheWelcome.vue";
-import { RouterLink, RouterView } from "vue-router";
+import TheItem from "../components/TheItem.vue";
 
-import HelloWorld from "../components/HelloWorld.vue";
+import mainView from "../components/MainView.vue";
 
 import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
 import { nanoid } from "nanoid";
-
 const debounceTimer = ref(null);
 const message = ref("");
 const history = ref([]);
@@ -22,8 +20,8 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-// const baseURL = "http://localhost:8000";
-// const baseURL = "127.0.0.1:8000"
+// const baseURL = "localhost:8000";
+// const baseURL = "127.0.0.1:8000";
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
@@ -159,7 +157,7 @@ const run = async () => {
 async function updateMessageAsync() {
   for (let i = 0; i < history.value.length; i++) {
     // 使用Promise和setTimeout来延迟更新message.value
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     message.value = history.value[i];
   }
 }
@@ -170,8 +168,8 @@ const getHistory = async () => {
     buttonShow.value = true;
   }
   history.value = response.data;
-
-  await updateMessageAsync();
+  // history.value = historyJson;
+  // await updateMessageAsync();
   historyLoaded.value = true;
 };
 </script>
@@ -186,7 +184,7 @@ const getHistory = async () => {
         width="125"
         height="125"
       />
-      <HelloWorld msg="压测报告" />
+      <mainView msg="压测报告" />
     </div>
 
     <div class="wrapper">
@@ -206,7 +204,7 @@ const getHistory = async () => {
       </div>
     </div>
     <main>
-      <TheWelcome :receivedMessage="message" />
+      <TheItem :receivedMessage="message" :receivedMessageList="history" />
     </main>
     <div v-if="httpIsError">
       <h3>HTTP错误</h3>
