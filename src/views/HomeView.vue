@@ -20,7 +20,7 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-// const baseURL = "localhost:8000";
+// const baseURL = "localhost:8001";
 // const baseURL = "127.0.0.1:8000";
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
@@ -212,7 +212,7 @@ const getHistory = async () => {
         <el-table-column prop="code" label="code" width="180" />
         <el-table-column prop="message" label="message" />
         <el-table-column prop="count" label="count" />
-        <el-table-column prop="url" label="url" />
+        <el-table-column prop="url" label="url" show-overflow-tooltip/>
       </el-table>
     </div>
     <div v-if="assertIsError">
@@ -224,17 +224,18 @@ const getHistory = async () => {
       >
         <el-table-column prop="message" label="message" width="180" />
         <el-table-column prop="count" label="count" width="180" />
-        <el-table-column prop="url" label="url" />
+        <el-table-column prop="url" label="url" show-overflow-tooltip/>
       </el-table>
     </div>
     <h3>接口详情</h3>
     <el-table
       :data="api_resultsData"
       style="width: 90rem; margin-top: 1rem"
+      :stripe="true"
       height="270"
     >
-      <el-table-column prop="name" label="名称" />
-      <el-table-column prop="url" label="url" />
+      <el-table-column prop="name" label="名称" show-overflow-tooltip width="130px"/>
+      <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
       <el-table-column prop="method" label="请求方法" />
       <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
       <el-table-column prop="total_requests" label="总请求数" />
