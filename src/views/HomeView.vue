@@ -1,5 +1,6 @@
 <script setup>
 import TheItem from "../components/TheItem.vue";
+import { RouterLink, RouterView } from "vue-router";
 
 import mainView from "../components/MainView.vue";
 
@@ -7,7 +8,10 @@ import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
 import { nanoid } from "nanoid";
+import historyJson from "../../../testHistory.json";
 const debounceTimer = ref(null);
+const wsWorker = ref(null);
+
 const message = ref("");
 const history = ref([]);
 const historyLoaded = ref(false);
@@ -20,56 +24,50 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-// const baseURL = "localhost:8001";
+// const baseURL = "localhost:8000";
 // const baseURL = "127.0.0.1:8000";
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
 onMounted(async () => {
-  let heartbeatInterval = 3000;
+  wsWorker.value = new Worker(new URL("./worker.js", import.meta.url));
+  wsWorker.value.postMessage({
+    action: "start",
+    baseURL: baseURL,
+    nanoid: nanoid(8),
+  });
 
-  const startHeartbeat = () => {
-    if (heartbeatTimer) {
-      clearInterval(heartbeatTimer);
+  wsWorker.value.onmessage = (event) => {
+    const { type, data } = event.data;
+    switch (type) {
+      case "message":
+        if (isValidJSON(data)) {
+          const jsonData = JSON.parse(data);
+          message.value = jsonData;
+          // 更新 Vue 状态
+          httpData.value = jsonData.http_errors;
+          assertData.value = jsonData.assert_errors;
+          api_resultsData.value = jsonData.api_results;
+          httpIsError.value = !!httpData.value.length;
+          assertIsError.value = !!assertData.value.length;
+        } else {
+          switch (data) {
+            case "DONE":
+              ElNotification.success({ title: "压测完成", duration: 0 });
+              break;
+          }
+        }
+        break;
+      case "open":
+        console.log("WebSocket in Worker opened");
+        break;
+      case "close":
+        console.log("WebSocket in Worker closed");
+        break;
+      case "error":
+        console.error("WebSocket error from Worker:", data.error);
+        break;
     }
-    heartbeatTimer = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send("PING"); // 发送心跳消息
-      }
-    }, heartbeatInterval);
-  };
-  ws.onopen = () => {
-    console.log("WebSocket connection opened");
-    startHeartbeat();
-  };
-
-  ws.onmessage = (event) => {
-    if (isValidJSON(event.data)) {
-      const data = JSON.parse(event.data);
-      console.log("Message received: ", data);
-      buttonShow.value = false;
-      message.value = data;
-      httpData.value = data.http_errors;
-      assertData.value = data.assert_errors;
-      api_resultsData.value = data.api_results;
-      httpIsError.value = !!httpData.value.length;
-      assertIsError.value = !!assertData.value.length;
-    } else {
-      switch (event.data) {
-        case "DONE":
-          ElNotification.success({ title: "压测完成", duration: 0 });
-      }
-    }
-  };
-
-  ws.onerror = (error) => {
-    console.error("WebSocket error: ", error);
-    clearInterval(heartbeatTimer);
-  };
-
-  ws.onclose = () => {
-    console.log("WebSocket connection closed");
-    clearInterval(heartbeatTimer);
   };
   await getHistory();
   if (history.value.length > 0) {
@@ -162,6 +160,7 @@ async function updateMessageAsync() {
   }
 }
 const getHistory = async () => {
+  console.log(historyJson);
   const response = await axios.get(`http://${baseURL}/history`);
   // const response = await axios.get(`http://localhost:8000/history`);
   if (response.data.length === 0) {
@@ -212,7 +211,7 @@ const getHistory = async () => {
         <el-table-column prop="code" label="code" width="180" />
         <el-table-column prop="message" label="message" />
         <el-table-column prop="count" label="count" />
-        <el-table-column prop="url" label="url" show-overflow-tooltip/>
+        <el-table-column prop="url" label="url" />
       </el-table>
     </div>
     <div v-if="assertIsError">
@@ -224,18 +223,17 @@ const getHistory = async () => {
       >
         <el-table-column prop="message" label="message" width="180" />
         <el-table-column prop="count" label="count" width="180" />
-        <el-table-column prop="url" label="url" show-overflow-tooltip/>
+        <el-table-column prop="url" label="url" />
       </el-table>
     </div>
     <h3>接口详情</h3>
     <el-table
       :data="api_resultsData"
       style="width: 90rem; margin-top: 1rem"
-      :stripe="true"
       height="270"
     >
-      <el-table-column prop="name" label="名称" show-overflow-tooltip width="130px"/>
-      <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
+      <el-table-column prop="name" label="名称" />
+      <el-table-column prop="url" label="url" />
       <el-table-column prop="method" label="请求方法" />
       <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
       <el-table-column prop="total_requests" label="总请求数" />
