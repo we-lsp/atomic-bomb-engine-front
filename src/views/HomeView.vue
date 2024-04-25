@@ -8,7 +8,6 @@ import { onMounted, ref, onUnmounted } from "vue";
 import axios from "axios";
 import { ElNotification } from "element-plus";
 import { nanoid } from "nanoid";
-import historyJson from "../../../testHistory.json";
 const debounceTimer = ref(null);
 const wsWorker = ref(null);
 
@@ -24,7 +23,7 @@ const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
-// const baseURL = "localhost:8000";
+// const baseURL = "localhost:8001";
 // const baseURL = "127.0.0.1:8000";
 const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
@@ -160,7 +159,7 @@ async function updateMessageAsync() {
   }
 }
 const getHistory = async () => {
-  console.log(historyJson);
+  // console.log(historyJson);
   const response = await axios.get(`http://${baseURL}/history`);
   // const response = await axios.get(`http://localhost:8000/history`);
   if (response.data.length === 0) {
@@ -207,11 +206,14 @@ const getHistory = async () => {
     </main>
     <div v-if="httpIsError">
       <h3>HTTP错误</h3>
-      <el-table :data="httpData" style="width: 90rem" height="270">
-        <el-table-column prop="code" label="code" width="180" />
-        <el-table-column prop="message" label="message" />
-        <el-table-column prop="count" label="count" />
-        <el-table-column prop="url" label="url" />
+      <el-table
+          :data="httpData"
+          style="width: 90rem"
+          :stripe="true">
+        <el-table-column prop="code" label="code" show-overflow-tooltip width="80px" />
+        <el-table-column prop="message" label="message" show-overflow-tooltip />
+        <el-table-column prop="count" label="count" width="120px"/>
+        <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
       </el-table>
     </div>
     <div v-if="assertIsError">
@@ -219,7 +221,7 @@ const getHistory = async () => {
       <el-table
         :data="assertData"
         style="width: 90rem; margin-top: 1rem"
-        height="270"
+        :stripe="true"
       >
         <el-table-column prop="message" label="message" width="180" />
         <el-table-column prop="count" label="count" width="180" />
@@ -230,10 +232,10 @@ const getHistory = async () => {
     <el-table
       :data="api_resultsData"
       style="width: 90rem; margin-top: 1rem"
-      height="270"
+      :stripe="true"
     >
-      <el-table-column prop="name" label="名称" />
-      <el-table-column prop="url" label="url" />
+      <el-table-column prop="name" label="名称" show-overflow-tooltip width="140px"/>
+      <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
       <el-table-column prop="method" label="请求方法" />
       <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
       <el-table-column prop="total_requests" label="总请求数" />
