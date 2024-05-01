@@ -22,9 +22,9 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8001";
-// const baseURL = "127.0.0.1:8000";
+const baseURL = "127.0.0.1:8000";
 // const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
@@ -226,6 +226,18 @@ const getHistory = async () => {
             width="140px"
           />
           <el-table-column
+            prop="host"
+            label="HOST"
+            show-overflow-tooltip
+            width="180px"
+          />
+          <el-table-column
+            prop="path"
+            label="PATH"
+            show-overflow-tooltip
+            width="220px"
+          />
+          <el-table-column
             prop="code"
             label="状态码"
             show-overflow-tooltip
@@ -242,12 +254,6 @@ const getHistory = async () => {
             label="来源"
             show-overflow-tooltip
             width="280px"
-          />
-          <el-table-column
-            prop="url"
-            label="url"
-            show-overflow-tooltip
-            width="300px"
           />
           <el-table-column prop="count" label="次数" width="120px" />
         </el-table>
@@ -266,15 +272,21 @@ const getHistory = async () => {
             width="140px"
           />
           <el-table-column
+            prop="host"
+            label="HOST"
+            show-overflow-tooltip
+            width="180px"
+          />
+          <el-table-column
+            prop="path"
+            label="PATH"
+            show-overflow-tooltip
+            width="220px"
+          />
+          <el-table-column
             prop="message"
             label="错误信息"
             show-overflow-tooltip
-          />
-          <el-table-column
-            prop="url"
-            label="url"
-            show-overflow-tooltip
-            width="300px"
           />
           <el-table-column prop="count" label="次数" width="120px" />
         </el-table>
@@ -337,7 +349,6 @@ const getHistory = async () => {
         </el-table>
       </div>
     </el-space>
-
     <footer>
       powered by
       <a
