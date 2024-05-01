@@ -1,6 +1,5 @@
 <script setup>
 import TheItem from "../components/TheItem.vue";
-import { RouterLink, RouterView } from "vue-router";
 
 import mainView from "../components/MainView.vue";
 
@@ -24,8 +23,8 @@ const hostname = window.location.hostname; // 获取当前页面的域名或IP�
 const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8001";
-// const baseURL = "127.0.0.1:8000";
-const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
+// const baseURL = "127.0.0.1:8001";
+// const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
 onMounted(async () => {
@@ -129,9 +128,15 @@ const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
   debounceTimer.value = setTimeout(run, 1000); // 重新设置计时器
 };
+// onUnmounted(() => {
+//   ws.close(); // 关闭 WebSocket 连接
+//   clearInterval(heartbeatTimer);
+// });
+
 onUnmounted(() => {
-  ws.close(); // 关闭 WebSocket 连接
-  clearInterval(heartbeatTimer);
+  if (wsWorker.value) {
+    wsWorker.value.postMessage({ action: "close" });
+  }
 });
 
 const run = async () => {
@@ -212,16 +217,44 @@ const getHistory = async () => {
     <el-space direction="vertical" :size="35">
       <div v-if="httpIsError">
         <h3>HTTP错误</h3>
-        <el-table
-            :data="httpData"
-            style="width: 90rem"
-            :stripe="true">
-          <el-table-column prop="name" label="名称" show-overflow-tooltip width="140px" />
-          <el-table-column prop="code" label="状态码" show-overflow-tooltip width="80px" :formatter="row => row.code === 0? '-': row.code"/>
-          <el-table-column prop="message" label="错误信息" show-overflow-tooltip />
-          <el-table-column prop="source" label="来源" show-overflow-tooltip width="280px"/>
-          <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
-          <el-table-column prop="count" label="次数" width="120px"/>
+        <el-table :data="httpData" style="width: 90rem" :stripe="true">
+          <el-table-column
+            prop="name"
+            label="名称"
+            show-overflow-tooltip
+            width="140px"
+          />
+          <el-table-column
+            prop="host"
+            label="HOST"
+            show-overflow-tooltip
+            width="180px"
+          />
+          <el-table-column
+            prop="path"
+            label="PATH"
+            show-overflow-tooltip
+            width="220px"
+          />
+          <el-table-column
+            prop="code"
+            label="状态码"
+            show-overflow-tooltip
+            width="80px"
+            :formatter="(row) => (row.code === 0 ? '-' : row.code)"
+          />
+          <el-table-column
+            prop="message"
+            label="错误信息"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="source"
+            label="来源"
+            show-overflow-tooltip
+            width="280px"
+          />
+          <el-table-column prop="count" label="次数" width="120px" />
         </el-table>
       </div>
       <div v-if="assertIsError">
@@ -231,58 +264,87 @@ const getHistory = async () => {
           style="width: 90rem; margin-top: 1rem"
           :stripe="true"
         >
-          <el-table-column prop="name" label="名称" show-overflow-tooltip width="140px" />
-          <el-table-column prop="message" label="错误信息" show-overflow-tooltip />
-          <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
-          <el-table-column prop="count" label="次数" width="120px"/>
+          <el-table-column
+            prop="name"
+            label="名称"
+            show-overflow-tooltip
+            width="140px"
+          />
+          <el-table-column
+            prop="host"
+            label="HOST"
+            show-overflow-tooltip
+            width="180px"
+          />
+          <el-table-column
+            prop="path"
+            label="PATH"
+            show-overflow-tooltip
+            width="220px"
+          />
+          <el-table-column
+            prop="message"
+            label="错误信息"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="count" label="次数" width="120px" />
         </el-table>
       </div>
       <div>
-      <h3>接口详情</h3>
-      <el-table
-            :data="api_resultsData"
-            style="width: 90rem; margin-top: 1rem"
-            :stripe="true"
+        <h3>接口详情</h3>
+        <el-table
+          :data="api_resultsData"
+          style="width: 90rem; margin-top: 1rem"
+          :stripe="true"
         >
-          <el-table-column prop="name" label="名称" show-overflow-tooltip width="140px"/>
-          <el-table-column prop="url" label="url" show-overflow-tooltip width="300px"/>
-          <el-table-column prop="method" label="请求方法" />
-          <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
+          <el-table-column
+            prop="name"
+            label="名称"
+            show-overflow-tooltip
+            width="140px"
+          />
+          <el-table-column prop="host" label="HOST" show-overflow-tooltip width="140px"/>
+          <el-table-column prop="path" label="PATH" show-overflow-tooltip width="160px"/>
+          <el-table-column prop="method" label="请求方法" width="80px"/>
+          <el-table-column prop="rps" label="RPS" :formatter="formatPrice" />
           <el-table-column prop="total_requests" label="总请求数" />
           <el-table-column prop="err_count" label="错误数量" />
-          <el-table-column prop="error_rate" label="错误率">
+          <el-table-column prop="error_rate" label="错误率" width="90px">
             <template v-slot:default="scope">
-          <span :style="{ color: getColor(scope.row.error_rate) }">
-            {{
-              formatPriceWithPercentage(
-                  scope.row,
-                  "error_rate",
-                  scope.row.error_rate,
-                  scope.$index
-              )
-            }}
-          </span>
+              <span :style="{ color: getColor(scope.row.error_rate) }">
+                {{
+                  formatPriceWithPercentage(
+                    scope.row,
+                    "error_rate",
+                    scope.row.error_rate,
+                    scope.$index
+                  )
+                }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column prop="min_response_time" label="最小响应时间(ms)" />
           <el-table-column prop="max_response_time" label="最大响应时间(ms)" />
-          <el-table-column prop="median_response_time" label="中位响应时间(ms)" />
+          <el-table-column
+            prop="median_response_time"
+            label="中位响应时间(ms)"
+          />
           <el-table-column prop="response_time_95" label="95位响应时间(ms)" />
           <el-table-column prop="response_time_99" label="99位响应时间(ms)" />
           <el-table-column
-              prop="throughput_per_second_kb"
-              label="每秒响应数据（kb）"
-              :formatter="formatPrice"
+            prop="throughput_per_second_kb"
+            label="每秒响应数据（kb）"
+            :formatter="formatPrice"
           />
           <el-table-column
-              prop="total_data_kb"
-              label="总响应数据量（kb）"
-              :formatter="formatPrice"
+            prop="total_data_kb"
+            label="总响应数据量（kb）"
+            :formatter="formatPrice"
+            width="100px"
           />
         </el-table>
       </div>
     </el-space>
-
     <footer>
       powered by
       <a

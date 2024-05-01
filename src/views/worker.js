@@ -1,10 +1,8 @@
 self.addEventListener("message", function (e) {
   const { action, baseURL, nanoid } = e.data;
-
+  const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid}`);
+  let heartbeatTimer;
   if (action === "start") {
-    const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid}`);
-    let heartbeatTimer;
-
     const startHeartbeat = () => {
       const heartbeatInterval = 3000; // 心跳间隔
       if (heartbeatTimer) {
@@ -43,5 +41,10 @@ self.addEventListener("message", function (e) {
         ws.close();
       }
     });
+  } else if (action === "close") {
+    if (ws) {
+      ws.close(); // 关闭 WebSocket 连接
+      clearInterval(heartbeatTimer); // 清除心跳定时器
+    }
   }
 });
