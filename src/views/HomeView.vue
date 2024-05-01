@@ -26,7 +26,7 @@ const port = window.location.port; // 获取当前页面的端口号
 const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8000";
 // const baseURL = "127.0.0.1:8000";
-const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
+// const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
 onMounted(async () => {
@@ -130,9 +130,15 @@ const debounceRun = () => {
   clearTimeout(debounceTimer.value); // 清除现有的计时器
   debounceTimer.value = setTimeout(run, 1000); // 重新设置计时器
 };
+// onUnmounted(() => {
+//   ws.close(); // 关闭 WebSocket 连接
+//   clearInterval(heartbeatTimer);
+// });
+
 onUnmounted(() => {
-  ws.close(); // 关闭 WebSocket 连接
-  clearInterval(heartbeatTimer);
+  if (wsWorker.value) {
+    wsWorker.value.postMessage({ action: "close" });
+  }
 });
 
 const run = async () => {
