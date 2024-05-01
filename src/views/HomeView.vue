@@ -1,6 +1,5 @@
 <script setup>
 import TheItem from "../components/TheItem.vue";
-import { RouterLink, RouterView } from "vue-router";
 
 import mainView from "../components/MainView.vue";
 
@@ -22,9 +21,9 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8001";
-const baseURL = "127.0.0.1:8000";
+// const baseURL = "127.0.0.1:8001";
 // const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
@@ -304,17 +303,13 @@ const getHistory = async () => {
             show-overflow-tooltip
             width="140px"
           />
-          <el-table-column
-            prop="url"
-            label="url"
-            show-overflow-tooltip
-            width="300px"
-          />
-          <el-table-column prop="method" label="请求方法" />
-          <el-table-column prop="rps" label="rps" :formatter="formatPrice" />
+          <el-table-column prop="host" label="HOST" show-overflow-tooltip width="140px"/>
+          <el-table-column prop="path" label="PATH" show-overflow-tooltip width="160px"/>
+          <el-table-column prop="method" label="请求方法" width="80px"/>
+          <el-table-column prop="rps" label="RPS" :formatter="formatPrice" />
           <el-table-column prop="total_requests" label="总请求数" />
           <el-table-column prop="err_count" label="错误数量" />
-          <el-table-column prop="error_rate" label="错误率">
+          <el-table-column prop="error_rate" label="错误率" width="90px">
             <template v-slot:default="scope">
               <span :style="{ color: getColor(scope.row.error_rate) }">
                 {{
@@ -345,6 +340,7 @@ const getHistory = async () => {
             prop="total_data_kb"
             label="总响应数据量（kb）"
             :formatter="formatPrice"
+            width="100px"
           />
         </el-table>
       </div>
