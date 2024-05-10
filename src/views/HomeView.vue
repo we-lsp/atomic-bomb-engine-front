@@ -21,9 +21,9 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8001";
-// const baseURL = "127.0.0.1:8001";
+const baseURL = "127.0.0.1:8001";
 // const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
@@ -303,9 +303,19 @@ const getHistory = async () => {
             show-overflow-tooltip
             width="140px"
           />
-          <el-table-column prop="host" label="HOST" show-overflow-tooltip width="140px"/>
-          <el-table-column prop="path" label="PATH" show-overflow-tooltip width="160px"/>
-          <el-table-column prop="method" label="请求方法" width="80px"/>
+          <el-table-column
+            prop="host"
+            label="HOST"
+            show-overflow-tooltip
+            width="140px"
+          />
+          <el-table-column
+            prop="path"
+            label="PATH"
+            show-overflow-tooltip
+            width="160px"
+          />
+          <el-table-column prop="method" label="请求方法" width="80px" />
           <el-table-column prop="rps" label="RPS" :formatter="formatPrice" />
           <el-table-column prop="total_requests" label="总请求数" />
           <el-table-column prop="err_count" label="错误数量" />

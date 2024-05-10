@@ -69,7 +69,10 @@ const updateRPSChart = () => {
       message.timestamp,
       message.rps,
     ]);
-
+    let baseSeriesData2 = allMessages.value.map((message) => [
+      message.timestamp,
+      message.errors_per_second,
+    ]);
     const series = [
       {
         name: "RPS",
@@ -84,6 +87,29 @@ const updateRPSChart = () => {
         },
         lineStyle: {
           opacity: selectedRPS.value.includes("RPS") ? 1 : 0,
+        },
+      },
+      {
+        name: "errors_per_second",
+        type: "line",
+        data: baseSeriesData2,
+        showInLegend: true,
+        sampling: {
+          type: "average",
+          rate: 0.1,
+          interval: 2,
+          bias: 0.5,
+        },
+        smooth: true,
+        showSymbol: false,
+        itemStyle: {
+          normal: {
+            opacity: selectedRPS.value.includes("errors_per_second") ? 1 : 0,
+          },
+        },
+        lineStyle: {
+          color: "red",
+          opacity: selectedRPS.value.includes("errors_per_second") ? 1 : 0,
         },
       },
     ];
@@ -471,6 +497,10 @@ watch(
           value: newVal[i].total_concurrent_number,
         });
         if (unSetRPSSelect.value.length === 0) {
+          unSetRPSSelect.value.push({
+            name: `errors_per_second`,
+            label: `errors_per_second`,
+          });
           newVal[i].api_results.forEach((apiResult) => {
             unSetRPSSelect.value.push({
               name: `${apiResult.name} RPS`,
@@ -547,6 +577,10 @@ watch(
       });
 
       if (unSetRPSSelect.value.length === 0) {
+        unSetRPSSelect.value.push({
+          name: `errors_per_second`,
+          label: `errors_per_second`,
+        });
         newVal.api_results.forEach((apiResult) => {
           unSetRPSSelect.value.push({
             name: `${apiResult.name} RPS`,
