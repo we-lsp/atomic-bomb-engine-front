@@ -12,7 +12,7 @@ const selectedResponseTimes = ref([
   "Median Response Time",
   "95th Percentile Response Time",
 ]);
-const selectedRPS = ref(["RPS"]);
+const selectedRPS = ref(["RPS", "errors_per_second"]);
 const selectConcurrent_number = ref(["total_concurrent_number"]);
 const unSetConcurrent_numberSelect = ref([]);
 const unSetSelect = ref([]);
