@@ -21,9 +21,9 @@ const assertData = ref([]);
 const api_resultsData = ref([]);
 const hostname = window.location.hostname; // 获取当前页面的域名或IP地址
 const port = window.location.port; // 获取当前页面的端口号
-// const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
+const baseURL = `${hostname}${port ? ":" + port : ""}`; // 拼接域名和端口号
 // const baseURL = "localhost:8001";
-const baseURL = "127.0.0.1:8001";
+// const baseURL = "127.0.0.1:8001";
 // const ws = new WebSocket(`ws://${baseURL}/ws/${nanoid(8)}`);
 
 let heartbeatTimer;
