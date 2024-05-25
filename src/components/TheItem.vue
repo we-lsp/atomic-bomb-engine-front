@@ -154,15 +154,23 @@ const updateRPSChart = () => {
         });
       });
     }
-    console.log("rpsseries", series);
-
+    // console.log("rpsseries", series);
+    let activeData = series
+      .filter((s) => s.itemStyle.normal.opacity !== 0)
+      .flatMap((s) => s.data.map((d) => d[1]));
+    let yAxisMax = Math.max(...activeData);
+    let yAxisMin = Math.min(...activeData);
     // 更新图表
     rpsChart.setOption({
       xAxis: {
         type: "time",
         data: allMessages.value.map((message) => new Date(message.timestamp)),
       },
-
+      yAxis: {
+        type: "value",
+        min: yAxisMin,
+        max: yAxisMax,
+      },
       series: series,
     });
   }
@@ -245,11 +253,21 @@ const updateConcurrent_numberChart = () => {
       });
     }
     console.log("series", series);
+    let activeData = series
+      .filter((s) => s.itemStyle.normal.opacity !== 0)
+      .flatMap((s) => s.data.map((d) => d[1]));
+    let yAxisMax = Math.max(...activeData);
+    let yAxisMin = Math.min(...activeData);
     // 更新图表
     Concurrent_numberChart.setOption({
       xAxis: {
         type: "time",
         data: allMessages.value.map((message) => new Date(message.timestamp)),
+      },
+      yAxis: {
+        type: "value",
+        min: yAxisMin,
+        max: yAxisMax,
       },
       series: series,
     });
@@ -389,12 +407,21 @@ const updateResponseTimeChart = () => {
         },
       });
     });
-
+    let activeData = series
+      .filter((s) => s.itemStyle.normal.opacity !== 0)
+      .flatMap((s) => s.data.map((d) => d[1]));
+    let yAxisMax = Math.max(...activeData);
+    let yAxisMin = Math.min(...activeData);
     // 更新图表
     responseTimeChart.setOption({
       xAxis: {
         type: "time",
         data: allMessages.value.map((message) => new Date(message.timestamp)),
+      },
+      yAxis: {
+        type: "value",
+        min: yAxisMin,
+        max: yAxisMax,
       },
       series: series,
     });
